@@ -13,22 +13,22 @@ import (
 )
 
 type Address struct {
-	Name string `json:"Name"`
+	Name         string `json:"Name"`
 	AddressLine1 string `json:"AddressLine1"`
 	AddressLine2 string `json:"AddressLine2"`
-	City string `json:"City"`
-	State string `json:"State"`
-	Zip string `json:"Zip"`
+	City         string `json:"City"`
+	State        string `json:"State"`
+	Zip          string `json:"Zip"`
 }
 
 type PreviewPost struct {
-	Description  string    `json:"Description"`
-	Size         string    `json:"Size"`
-	DryRun       bool      `json:"DryRun"`
-	Front        string    `json:"Front"`
-	Back         string    `json:"Back"`
-	To           Address   `json:"To"`
-	From         Address   `json:"From"`
+	Description string  `json:"Description"`
+	Size        string  `json:"Size"`
+	DryRun      bool    `json:"DryRun"`
+	Front       string  `json:"Front"`
+	Back        string  `json:"Back"`
+	To          Address `json:"To"`
+	From        Address `json:"From"`
 }
 
 func main() {
@@ -56,22 +56,22 @@ func main() {
 			Size:        "4.25x6",
 			DryRun:      true,
 			Front:       "<html><body>Front</body></html>",
-			Back:       "<html><body>Back</body></html>",
+			Back:        "<html><body>Back</body></html>",
 			To: Address{
-				Name: "Adam Derewecki",
+				Name:         "Adam Derewecki",
 				AddressLine1: "960 Wisconsin St",
 				AddressLine2: "",
-				City: "San Francisco",
-				State: "CA",
-				Zip: "94107",
+				City:         "San Francisco",
+				State:        "CA",
+				Zip:          "94107",
 			},
 			From: Address{
-				Name: "Adam Derewecki",
+				Name:         "Adam Derewecki",
 				AddressLine1: "960 Wisconsin St",
 				AddressLine2: "",
-				City: "San Francisco",
-				State: "CA",
-				Zip: "94107",
+				City:         "San Francisco",
+				State:        "CA",
+				Zip:          "94107",
 			},
 		}
 		fmt.Printf("%+v", previewPost)
@@ -86,7 +86,7 @@ func main() {
 
 		req.Header.Set("Content-Type", `application/json`)
 		req.Header.Set("Accept", `application/json`)
-		req.Header.Set("Authorization", "Basic " + DirectmailApiKey)
+		req.Header.Set("Authorization", "Basic "+DirectmailApiKey)
 		fmt.Printf("%+v", req)
 
 		resp, err := client.Do(req)
@@ -103,7 +103,7 @@ func main() {
 		if err != nil {
 			c.JSON(500, gin.H{
 				"status": "ERR",
-				"err": err,
+				"err":    err,
 			})
 		} else {
 			c.JSON(200, gin.H{
