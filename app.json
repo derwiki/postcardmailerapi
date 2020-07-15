@@ -1,12 +1,11 @@
 {
-  "name": "Start on Heroku: Go",
-  "description": "Go Getting Started Example App",
+  "name": "PostcardMailerAPI",
+  "description": "Back-end for PostcardMailer",
   "keywords": [
-    "getting-started",
+    "postcards",
     "go",
-    "sample",
-    "example"
+    "golang"
   ],
-  "website": "http://github.com/heroku/go-getting-started",
-  "repository": "http://github.com/heroku/go-getting-started"
+  "website": "http://www.postcardmailer.us",
+  "repository": "git@heroku.com:postcardmailerapi.git"
 }
