@@ -81,6 +81,7 @@ func main() {
 		client := &http.Client{}
 		req, err := http.NewRequest("POST", BaseUrl, bytes.NewReader(jsonValue))
 		if err != nil {
+			fmt.Printf("err: NewRequest: %s", err)
 		}
 
 		req.Header.Set("Content-Type", `application/json`)
@@ -89,9 +90,15 @@ func main() {
 		fmt.Printf("%+v", req)
 
 		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Printf("err: client.Do: %s", err)
+		}
 
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Printf("err: ReadAll: %s", err)
+		}
 
 		if err != nil {
 			c.JSON(500, gin.H{
@@ -101,7 +108,7 @@ func main() {
 		} else {
 			c.JSON(200, gin.H{
 				"status": "OK",
-				"body":   body,
+				"body":   string(body),
 			})
 		}
 	})
