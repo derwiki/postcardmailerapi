@@ -2,7 +2,10 @@
   rev: master
   hooks:
     - id: go-fmt
+      exclude: ^vendor/*
     - id: go-vet
       exclude: ^vendor/*
     - id: go-unit-tests
+      exclude: ^vendor/*
     - id: go-build
+      exclude: ^vendor/*
