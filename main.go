@@ -31,6 +31,61 @@ type PreviewPost struct {
 	From        Address `json:"From"`
 }
 
+func PreviewPostcardApiRequest() string {
+	BaseUrl := "https://print.directmailers.com/api/v1/postcard/"
+	DirectmailApiKey := os.Getenv("DIRECT_MAIL_KEY")
+
+	var previewPost = PreviewPost{
+		Description: "test",
+		Size:        "4.25x6",
+		DryRun:      true,
+		Front:       "<html><body>Front</body></html>",
+		Back:        "<html><body>Back</body></html>",
+		To: Address{
+			Name:         "Adam Derewecki",
+			AddressLine1: "960 Wisconsin St",
+			AddressLine2: "",
+			City:         "San Francisco",
+			State:        "CA",
+			Zip:          "94107",
+		},
+		From: Address{
+			Name:         "Adam Derewecki",
+			AddressLine1: "960 Wisconsin St",
+			AddressLine2: "",
+			City:         "San Francisco",
+			State:        "CA",
+			Zip:          "94107",
+		},
+	}
+	fmt.Printf("%+v", previewPost)
+	jsonValue, _ := json.Marshal(previewPost)
+	fmt.Printf("%+v", jsonValue)
+
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", BaseUrl, bytes.NewReader(jsonValue))
+	if err != nil {
+		fmt.Printf("err: NewRequest: %s", err)
+	}
+
+	req.Header.Set("Content-Type", `application/json`)
+	req.Header.Set("Accept", `application/json`)
+	req.Header.Set("Authorization", "Basic "+DirectmailApiKey)
+	fmt.Printf("%+v", req)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Printf("err: client.Do: %s", err)
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("err: ReadAll: %s", err)
+	}
+	return string(body)
+}
+
 func main() {
 	port := os.Getenv("PORT")
 
@@ -48,69 +103,12 @@ func main() {
 	})
 
 	router.POST("/v1/postcard/preview", func(c *gin.Context) {
-		BaseUrl := "https://print.directmailers.com/api/v1/postcard/"
-		DirectmailApiKey := os.Getenv("DIRECT_MAIL_KEY")
+		body := PreviewPostcardApiRequest()
 
-		var previewPost = PreviewPost{
-			Description: "test",
-			Size:        "4.25x6",
-			DryRun:      true,
-			Front:       "<html><body>Front</body></html>",
-			Back:        "<html><body>Back</body></html>",
-			To: Address{
-				Name:         "Adam Derewecki",
-				AddressLine1: "960 Wisconsin St",
-				AddressLine2: "",
-				City:         "San Francisco",
-				State:        "CA",
-				Zip:          "94107",
-			},
-			From: Address{
-				Name:         "Adam Derewecki",
-				AddressLine1: "960 Wisconsin St",
-				AddressLine2: "",
-				City:         "San Francisco",
-				State:        "CA",
-				Zip:          "94107",
-			},
-		}
-		fmt.Printf("%+v", previewPost)
-		jsonValue, _ := json.Marshal(previewPost)
-		fmt.Printf("%+v", jsonValue)
-
-		client := &http.Client{}
-		req, err := http.NewRequest("POST", BaseUrl, bytes.NewReader(jsonValue))
-		if err != nil {
-			fmt.Printf("err: NewRequest: %s", err)
-		}
-
-		req.Header.Set("Content-Type", `application/json`)
-		req.Header.Set("Accept", `application/json`)
-		req.Header.Set("Authorization", "Basic "+DirectmailApiKey)
-		fmt.Printf("%+v", req)
-
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Printf("err: client.Do: %s", err)
-		}
-
-		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			fmt.Printf("err: ReadAll: %s", err)
-		}
-
-		if err != nil {
-			c.JSON(500, gin.H{
-				"status": "ERR",
-				"err":    err,
-			})
-		} else {
-			c.JSON(200, gin.H{
-				"status": "OK",
-				"body":   string(body),
-			})
-		}
+		c.JSON(200, gin.H{
+			"status": "OK",
+			"body":   body,
+		})
 	})
 
 	router.Run(":" + port)
