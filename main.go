@@ -2,10 +2,12 @@ package main
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	_ "github.com/heroku/x/hmetrics/onload"
+	_ "github.com/lib/pq"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -29,6 +31,26 @@ type PreviewPost struct {
 	Back        string  `json:"Back"`
 	To          Address `json:"To"`
 	From        Address `json:"From"`
+}
+
+func dbTest() {
+	connStr := os.Getenv("DATABASE_URL")
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	rows, err := db.Query("SELECT id, email FROM users ORDER BY id ASC")
+
+	defer rows.Close()
+	for rows.Next() {
+		var email string
+		var id int
+
+		err = rows.Scan(&id, &email)
+
+		fmt.Println(id, email)
+	}
 }
 
 func PreviewPostcardApiRequest(ch chan<- string) {
@@ -101,6 +123,10 @@ func main() {
 
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.tmpl.html", nil)
+	})
+	router.POST("/v1/dbtest", func(c *gin.Context) {
+		dbTest()
+		c.JSON(200, gin.H{"status": "ok"})
 	})
 
 	router.POST("/v1/postcard/preview", func(c *gin.Context) {
