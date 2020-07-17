@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 )
 
 type Address struct {
@@ -33,6 +32,7 @@ type PreviewPost struct {
 }
 
 func PreviewPostcardApiRequest(ch chan<- string) {
+	fmt.Println("PreviewPostcardApiRequest enter")
 	BaseUrl := "https://print.directmailers.com/api/v1/postcard/"
 	DirectmailApiKey := os.Getenv("DIRECT_MAIL_KEY")
 
@@ -107,21 +107,25 @@ func main() {
 		var responses []string
 
 		ch := make(chan string)
+		concurrencyLevel := 30
 
-		for i := 0; i < 5; i++ {
+		for i := 0; i < concurrencyLevel; i++ {
 			go PreviewPostcardApiRequest(ch)
 		}
 
-		for i := 0; i < 5; i++ {
-			fmt.Println("in loop")
-			responses = append(responses, <-ch)
+		for i := 0; i < concurrencyLevel; i++ {
+			buffer := <-ch
+			fmt.Println("received", i)
+			responses = append(responses, buffer)
 		}
-
-		result := strings.Join(responses, "\n")
+		fmt.Println("len(responses)", len(responses))
 
 		c.JSON(200, gin.H{
-			"status": "OK",
-			"body":   result,
+			"0": responses[0],
+			"1": responses[1],
+			"2": responses[2],
+			"3": responses[3],
+			"4": responses[4],
 		})
 	})
 
