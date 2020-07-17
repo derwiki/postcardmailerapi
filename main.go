@@ -15,22 +15,22 @@ import (
 )
 
 type Address struct {
-	Name         string `json:"Name"`
-	AddressLine1 string `json:"AddressLine1"`
-	AddressLine2 string `json:"AddressLine2"`
-	City         string `json:"City"`
-	State        string `json:"State"`
-	Zip          string `json:"Zip"`
+	Name         string
+	AddressLine1 string
+	AddressLine2 string
+	City         string
+	State        string
+	Zip          string
 }
 
 type PreviewPost struct {
-	Description string  `json:"Description"`
-	Size        string  `json:"Size"`
-	DryRun      bool    `json:"DryRun"`
-	Front       string  `json:"Front"`
-	Back        string  `json:"Back"`
-	To          Address `json:"To"`
-	From        Address `json:"From"`
+	Description string
+	Size        string
+	DryRun      bool
+	Front       string
+	Back        string
+	To          Address
+	From        Address
 }
 
 func dbTest() {
