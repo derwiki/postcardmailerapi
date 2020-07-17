@@ -3,5 +3,6 @@
   hooks:
     - id: go-fmt
     - id: go-vet
+      exclude: ^vendor/*
     - id: go-unit-tests
     - id: go-build
