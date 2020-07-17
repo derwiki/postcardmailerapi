@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type Address struct {
@@ -31,7 +32,7 @@ type PreviewPost struct {
 	From        Address `json:"From"`
 }
 
-func PreviewPostcardApiRequest() string {
+func PreviewPostcardApiRequest(ch chan<- string) {
 	BaseUrl := "https://print.directmailers.com/api/v1/postcard/"
 	DirectmailApiKey := os.Getenv("DIRECT_MAIL_KEY")
 
@@ -83,7 +84,7 @@ func PreviewPostcardApiRequest() string {
 	if err != nil {
 		fmt.Printf("err: ReadAll: %s", err)
 	}
-	return string(body)
+	ch <- string(body)
 }
 
 func main() {
@@ -103,11 +104,24 @@ func main() {
 	})
 
 	router.POST("/v1/postcard/preview", func(c *gin.Context) {
-		body := PreviewPostcardApiRequest()
+		var responses []string
+
+		ch := make(chan string)
+
+		for i := 0; i < 5; i++ {
+			go PreviewPostcardApiRequest(ch)
+		}
+
+		for i := 0; i < 5; i++ {
+			fmt.Println("in loop")
+			responses = append(responses, <-ch)
+		}
+
+		result := strings.Join(responses, "\n")
 
 		c.JSON(200, gin.H{
 			"status": "OK",
-			"body":   body,
+			"body":   result,
 		})
 	})
 
