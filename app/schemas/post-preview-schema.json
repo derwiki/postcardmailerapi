@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "from": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "address1": {
+          "type": "string"
+        },
+        "address2": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "postal_code": {
+          "type": "string"
+        },
+        "country": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "address1",
+        "city",
+        "state",
+        "postal_code"
+      ]
+    },
+    "to": {
+      "type": "array",
+      "items": [
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "address1": {
+              "type": "string"
+            },
+            "address2": {
+              "type": "string"
+            },
+            "city": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "postal_code": {
+              "type": "string"
+            },
+            "country": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "address1",
+            "city",
+            "state",
+            "postal_code"
+          ]
+        }
+      ]
+    },
+    "html": {
+      "type": "object",
+      "properties": {
+        "front": {
+          "type": "string"
+        },
+        "back": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "front",
+        "back"
+      ]
+    }
+  },
+  "required": [
+    "from",
+    "to",
+    "html"
+  ]
+}
