@@ -1,0 +1,29 @@
+{
+  "from": {
+    "name": "Adam",
+    "address1": "960 wisc",
+    "city": "san fran",
+    "state": "ca",
+    "postal_code": "94107"
+  },
+  "to": [
+    {
+      "name": "Adam",
+      "address1": "960 wisc",
+      "city": "san fran",
+      "state": "ca",
+      "postal_code": "94107"
+    },
+    {
+      "name": "Adam",
+      "address1": "960 wisc",
+      "city": "san fran",
+      "state": "ca",
+      "postal_code": "94107"
+    }
+  ],
+  "html": {
+    "front": "<html/>",
+    "back": "<html/>"
+  }
+}
