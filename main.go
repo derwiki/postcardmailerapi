@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 )
 
 type Address struct {
@@ -133,26 +134,22 @@ func main() {
 		var responses []string
 
 		ch := make(chan string)
-		concurrencyLevel := 30
+		concurrencyLevel := 3
 
 		for i := 0; i < concurrencyLevel; i++ {
 			go PreviewPostcardApiRequest(ch)
 		}
 
+		var respJson = gin.H{}
 		for i := 0; i < concurrencyLevel; i++ {
 			buffer := <-ch
 			fmt.Println("received", i)
+			respJson[strconv.Itoa(i)] = buffer
 			responses = append(responses, buffer)
 		}
 		fmt.Println("len(responses)", len(responses))
 
-		c.JSON(200, gin.H{
-			"0": responses[0],
-			"1": responses[1],
-			"2": responses[2],
-			"3": responses[3],
-			"4": responses[4],
-		})
+		c.JSON(200, respJson)
 	})
 
 	router.Run(":" + port)
