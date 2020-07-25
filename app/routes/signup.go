@@ -1,4 +1,4 @@
-package routes_signup
+package routes
 
 import (
 	"fmt"
