@@ -8,10 +8,18 @@ import (
 	"github.com/derwiki/postcardmailerapi/app/schemas"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
 )
+
+type PostcardPreviewRequestSchema struct {
+	Front string
+	Back  string
+	To    schemas.Address
+	From  schemas.Address
+}
 
 type PreviewPostcardApiRequestSchema struct {
 	Description string
@@ -23,15 +31,22 @@ type PreviewPostcardApiRequestSchema struct {
 	From        schemas.Address
 }
 
-func PostcardPreviewHandler(c *gin.Context) {
+func PostcardPreviewPostHandler(c *gin.Context) {
 	helpers.SetCorsHeaders(c)
 	var responses []string
 
+	var postcardPreviewRequest PostcardPreviewRequestSchema
+	err := c.BindJSON(&postcardPreviewRequest)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(postcardPreviewRequest)
+
 	ch := make(chan string)
-	concurrencyLevel := 3
+	concurrencyLevel := 1
 
 	for i := 0; i < concurrencyLevel; i++ {
-		go PreviewPostcardApiRequest(ch)
+		go PreviewPostcardApiRequest(ch, postcardPreviewRequest)
 	}
 
 	var respJson = gin.H{}
@@ -46,7 +61,7 @@ func PostcardPreviewHandler(c *gin.Context) {
 	c.JSON(200, respJson)
 }
 
-func PreviewPostcardApiRequest(ch chan<- string) {
+func PreviewPostcardApiRequest(ch chan<- string, postcardPreviewRequest PostcardPreviewRequestSchema) {
 	fmt.Println("PreviewPostcardApiRequest enter")
 	BaseUrl := "https://print.directmailers.com/api/v1/postcard/"
 	DirectmailApiKey := os.Getenv("DIRECT_MAIL_KEY")
@@ -55,24 +70,10 @@ func PreviewPostcardApiRequest(ch chan<- string) {
 		Description: "test",
 		Size:        "4.25x6",
 		DryRun:      true,
-		Front:       "<html><body>Front</body></html>",
-		Back:        "<html><body>Back</body></html>",
-		To: schemas.Address{
-			Name:         "Adam Derewecki",
-			AddressLine1: "960 Wisconsin St",
-			AddressLine2: "",
-			City:         "San Francisco",
-			State:        "CA",
-			Zip:          "94107",
-		},
-		From: schemas.Address{
-			Name:         "Adam Derewecki",
-			AddressLine1: "960 Wisconsin St",
-			AddressLine2: "",
-			City:         "San Francisco",
-			State:        "CA",
-			Zip:          "94107",
-		},
+		Front:       postcardPreviewRequest.Front,
+		Back:        postcardPreviewRequest.Back,
+		To:          postcardPreviewRequest.To,
+		From:        postcardPreviewRequest.From,
 	}
 	fmt.Printf("%+v", previewPostcardApiRequest)
 	jsonValue, _ := json.Marshal(previewPostcardApiRequest)
@@ -102,7 +103,7 @@ func PreviewPostcardApiRequest(ch chan<- string) {
 	ch <- string(body)
 }
 
-func PreviewPostOptionsHandler(c *gin.Context) {
+func PostcardPreviewOptionsHandler(c *gin.Context) {
 	fmt.Println("in OPTIONS /v1/postcards/preview")
 	helpers.SetCorsHeaders(c)
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
