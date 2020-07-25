@@ -145,6 +145,7 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 	router.OPTIONS("/v1/dbtest", func(c *gin.Context) {
+		fmt.Println("in OPTIONS /v1/dbtest")
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Headers", "access-control-allow-origin, access-control-allow-headers")
 		c.Header("Access-Control-Allow-Methods", "POST, OPTIONS")
