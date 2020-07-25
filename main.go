@@ -138,14 +138,17 @@ func main() {
 		c.HTML(http.StatusOK, "index.tmpl.html", nil)
 	})
 	router.POST("/v1/dbtest", func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Headers", "access-control-allow-origin, access-control-allow-headers")
+		c.Header("Access-Control-Allow-Methods", "POST, OPTIONS")
 		dbTest()
-		c.JSON(200, gin.H{"status": "ok"})
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 	router.OPTIONS("/v1/dbtest", func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Headers", "access-control-allow-origin, access-control-allow-headers")
 		c.Header("Access-Control-Allow-Methods", "POST, OPTIONS")
-		c.JSON(http.StatusOK, struct{}{})
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
 	router.POST("/v1/postcard/preview", func(c *gin.Context) {
