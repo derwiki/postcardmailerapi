@@ -17,7 +17,7 @@ import (
 type PostcardPreviewRequestSchema struct {
 	Front string
 	Back  string
-	To    schemas.Address
+	To    []schemas.Address
 	From  schemas.Address
 }
 
@@ -43,10 +43,10 @@ func PostcardPreviewPostHandler(c *gin.Context) {
 	fmt.Println(postcardPreviewRequest)
 
 	ch := make(chan string)
-	concurrencyLevel := 1
+	concurrencyLevel := len(postcardPreviewRequest.To)
 
 	for i := 0; i < concurrencyLevel; i++ {
-		go PreviewPostcardApiRequest(ch, postcardPreviewRequest)
+		go PreviewPostcardApiRequest(ch, postcardPreviewRequest, postcardPreviewRequest.To[i])
 	}
 
 	var respJson = gin.H{}
@@ -61,7 +61,7 @@ func PostcardPreviewPostHandler(c *gin.Context) {
 	c.JSON(200, respJson)
 }
 
-func PreviewPostcardApiRequest(ch chan<- string, postcardPreviewRequest PostcardPreviewRequestSchema) {
+func PreviewPostcardApiRequest(ch chan<- string, postcardPreviewRequest PostcardPreviewRequestSchema, to schemas.Address) {
 	fmt.Println("PreviewPostcardApiRequest enter")
 	BaseUrl := "https://print.directmailers.com/api/v1/postcard/"
 	DirectmailApiKey := os.Getenv("DIRECT_MAIL_KEY")
@@ -72,7 +72,7 @@ func PreviewPostcardApiRequest(ch chan<- string, postcardPreviewRequest Postcard
 		DryRun:      true,
 		Front:       postcardPreviewRequest.Front,
 		Back:        postcardPreviewRequest.Back,
-		To:          postcardPreviewRequest.To,
+		To:          to,
 		From:        postcardPreviewRequest.From,
 	}
 	fmt.Printf("%+v", previewPostcardApiRequest)
