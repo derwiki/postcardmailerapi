@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	routes_signup "github.com/derwiki/postcardmailerapi/app/routes"
 	"github.com/gin-gonic/gin"
 	_ "github.com/heroku/x/hmetrics/onload"
 	_ "github.com/lib/pq"
@@ -142,22 +143,8 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
-	router.POST("/v1/signup", func(c *gin.Context) {
-		fmt.Println("in POST /v1/signup")
-		var signupPost SignupPost
-		err := c.BindJSON(&signupPost)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println(signupPost.Email, signupPost.Password)
-		setCorsHeaders(c)
-		c.JSON(http.StatusOK, gin.H{"status": "ok", "email": signupPost.Email})
-	})
-	router.OPTIONS("/v1/signup", func(c *gin.Context) {
-		fmt.Println("in OPTIONS /v1/signup")
-		setCorsHeaders(c)
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
-	})
+	router.POST("/v1/signup", routes_signup.SignupPostHandler)
+	router.OPTIONS("/v1/signup", routes_signup.SignupOptionsHandler)
 
 	router.POST("/v1/postcard/preview", func(c *gin.Context) {
 		var responses []string
