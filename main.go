@@ -35,8 +35,8 @@ type PreviewPost struct {
 }
 
 type SignupPost struct {
-	EMAIL    string `json:"email"`
-	PASSWORD string `json:"password"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 func dbTest() {
@@ -149,10 +149,9 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(signupPost.EMAIL, signupPost.PASSWORD)
-		fmt.Println(c.Params)
+		fmt.Println(signupPost.Email, signupPost.Password)
 		setCorsHeaders(c)
-		c.JSON(http.StatusOK, gin.H{"status": "ok", "email": signupPost.EMAIL})
+		c.JSON(http.StatusOK, gin.H{"status": "ok", "email": signupPost.Email})
 	})
 	router.OPTIONS("/v1/signup", func(c *gin.Context) {
 		fmt.Println("in OPTIONS /v1/signup")
