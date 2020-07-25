@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	helpers "github.com/derwiki/postcardmailerapi/app"
+	"github.com/derwiki/postcardmailerapi/app/schemas"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"net/http"
@@ -12,26 +13,17 @@ import (
 	"strconv"
 )
 
-type Address struct {
-	Name         string
-	AddressLine1 string
-	AddressLine2 string
-	City         string
-	State        string
-	Zip          string
-}
-
-type PreviewPost struct {
+type PreviewPostcardApiRequestSchema struct {
 	Description string
 	Size        string
 	DryRun      bool
 	Front       string
 	Back        string
-	To          Address
-	From        Address
+	To          schemas.Address
+	From        schemas.Address
 }
 
-func PreviewPostHandler(c *gin.Context) {
+func PostcardPreviewHandler(c *gin.Context) {
 	helpers.SetCorsHeaders(c)
 	var responses []string
 
@@ -59,13 +51,13 @@ func PreviewPostcardApiRequest(ch chan<- string) {
 	BaseUrl := "https://print.directmailers.com/api/v1/postcard/"
 	DirectmailApiKey := os.Getenv("DIRECT_MAIL_KEY")
 
-	var previewPost = PreviewPost{
+	var previewPostcardApiRequest = PreviewPostcardApiRequestSchema{
 		Description: "test",
 		Size:        "4.25x6",
 		DryRun:      true,
 		Front:       "<html><body>Front</body></html>",
 		Back:        "<html><body>Back</body></html>",
-		To: Address{
+		To: schemas.Address{
 			Name:         "Adam Derewecki",
 			AddressLine1: "960 Wisconsin St",
 			AddressLine2: "",
@@ -73,7 +65,7 @@ func PreviewPostcardApiRequest(ch chan<- string) {
 			State:        "CA",
 			Zip:          "94107",
 		},
-		From: Address{
+		From: schemas.Address{
 			Name:         "Adam Derewecki",
 			AddressLine1: "960 Wisconsin St",
 			AddressLine2: "",
@@ -82,8 +74,8 @@ func PreviewPostcardApiRequest(ch chan<- string) {
 			Zip:          "94107",
 		},
 	}
-	fmt.Printf("%+v", previewPost)
-	jsonValue, _ := json.Marshal(previewPost)
+	fmt.Printf("%+v", previewPostcardApiRequest)
+	jsonValue, _ := json.Marshal(previewPostcardApiRequest)
 	fmt.Printf("%+v", jsonValue)
 
 	client := &http.Client{}
