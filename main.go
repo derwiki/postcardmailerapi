@@ -13,11 +13,6 @@ import (
 	"os"
 )
 
-type SignupPost struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
 func dbTest() {
 	connStr := os.Getenv("DATABASE_URL")
 	db, err := sql.Open("postgres", connStr)
@@ -51,6 +46,7 @@ func main() {
 	router.POST("/v1/signup", routes.SignupPostHandler)
 	router.OPTIONS("/v1/signup", routes.SignupOptionsHandler)
 	router.POST("/v1/postcard/preview", routes.PreviewPostHandler)
+	router.OPTIONS("/v1/postcard/preview", routes.PreviewPostOptionsHandler)
 
 	router.POST("/v1/dbtest", func(c *gin.Context) {
 		helpers.SetCorsHeaders(c)

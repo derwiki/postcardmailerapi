@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	helpers "github.com/derwiki/postcardmailerapi/app"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"net/http"
@@ -31,6 +32,7 @@ type PreviewPost struct {
 }
 
 func PreviewPostHandler(c *gin.Context) {
+	helpers.SetCorsHeaders(c)
 	var responses []string
 
 	ch := make(chan string)
@@ -106,4 +108,10 @@ func PreviewPostcardApiRequest(ch chan<- string) {
 		fmt.Printf("err: ReadAll: %s", err)
 	}
 	ch <- string(body)
+}
+
+func PreviewPostOptionsHandler(c *gin.Context) {
+	fmt.Println("in OPTIONS /v1/postcards/preview")
+	helpers.SetCorsHeaders(c)
+	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
