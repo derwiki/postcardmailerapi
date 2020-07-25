@@ -110,6 +110,12 @@ func PreviewPostcardApiRequest(ch chan<- string) {
 	ch <- string(body)
 }
 
+func setCorsHeaders(c *gin.Context) {
+	c.Header("Access-Control-Allow-Origin", "*")
+	c.Header("Access-Control-Allow-Headers", "access-control-allow-origin, access-control-allow-headers")
+	c.Header("Access-Control-Allow-Methods", "POST, OPTIONS")
+}
+
 func main() {
 	port := os.Getenv("PORT")
 
@@ -119,36 +125,18 @@ func main() {
 
 	router := gin.New()
 	router.Use(gin.Logger())
-	// router.LoadHTMLGlob("templates/*.tmpl.html")
-	// router.Static("/static", "static")
-
-	/*
-		router.Use(cors.New(cors.Config{
-			AllowOrigins:     []string{"http://staging.postcardmailer.us", "http://localhost"},
-			AllowMethods:     []string{"POST", "PATCH"},
-			AllowHeaders:     []string{"Origin"},
-			ExposeHeaders:    []string{"Content-Length"},
-			AllowCredentials: true,
-			MaxAge:           12 * time.Hour,
-		}))
-
-	*/
 
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.tmpl.html", nil)
 	})
 	router.POST("/v1/dbtest", func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Headers", "access-control-allow-origin, access-control-allow-headers")
-		c.Header("Access-Control-Allow-Methods", "POST, OPTIONS")
+		setCorsHeaders(c)
 		dbTest()
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 	router.OPTIONS("/v1/dbtest", func(c *gin.Context) {
 		fmt.Println("in OPTIONS /v1/dbtest")
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Headers", "access-control-allow-origin, access-control-allow-headers")
-		c.Header("Access-Control-Allow-Methods", "POST, OPTIONS")
+		setCorsHeaders(c)
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
