@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/heroku/x/hmetrics/onload"
 	_ "github.com/lib/pq"
@@ -14,7 +13,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 )
 
 type Address struct {
@@ -124,14 +122,17 @@ func main() {
 	// router.LoadHTMLGlob("templates/*.tmpl.html")
 	// router.Static("/static", "static")
 
-	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://staging.postcardmailer.us", "http://localhost"},
-		AllowMethods:     []string{"POST", "PATCH"},
-		AllowHeaders:     []string{"Origin"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}))
+	/*
+		router.Use(cors.New(cors.Config{
+			AllowOrigins:     []string{"http://staging.postcardmailer.us", "http://localhost"},
+			AllowMethods:     []string{"POST", "PATCH"},
+			AllowHeaders:     []string{"Origin"},
+			ExposeHeaders:    []string{"Content-Length"},
+			AllowCredentials: true,
+			MaxAge:           12 * time.Hour,
+		}))
+
+	*/
 
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.tmpl.html", nil)
@@ -139,6 +140,11 @@ func main() {
 	router.POST("/v1/dbtest", func(c *gin.Context) {
 		dbTest()
 		c.JSON(200, gin.H{"status": "ok"})
+	})
+	router.OPTIONS("/v1/dbtest", func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Headers", "access-control-allow-origin, access-control-allow-headers")
+		c.JSON(http.StatusOK, struct{}{})
 	})
 
 	router.POST("/v1/postcard/preview", func(c *gin.Context) {
