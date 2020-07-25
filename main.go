@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/heroku/x/hmetrics/onload"
 	_ "github.com/lib/pq"
@@ -13,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 )
 
 type Address struct {
@@ -119,8 +121,17 @@ func main() {
 
 	router := gin.New()
 	router.Use(gin.Logger())
-	router.LoadHTMLGlob("templates/*.tmpl.html")
-	router.Static("/static", "static")
+	// router.LoadHTMLGlob("templates/*.tmpl.html")
+	// router.Static("/static", "static")
+
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://staging.postcardmailer.us", "http://localhost"},
+		AllowMethods:     []string{"POST", "PATCH"},
+		AllowHeaders:     []string{"Origin"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.tmpl.html", nil)
