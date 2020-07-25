@@ -126,9 +126,6 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Logger())
 
-	router.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.tmpl.html", nil)
-	})
 	router.POST("/v1/dbtest", func(c *gin.Context) {
 		setCorsHeaders(c)
 		dbTest()
@@ -136,6 +133,17 @@ func main() {
 	})
 	router.OPTIONS("/v1/dbtest", func(c *gin.Context) {
 		fmt.Println("in OPTIONS /v1/dbtest")
+		setCorsHeaders(c)
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
+
+	router.POST("/v1/signup", func(c *gin.Context) {
+		fmt.Println(c.Params)
+		setCorsHeaders(c)
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
+	router.OPTIONS("/v1/signup", func(c *gin.Context) {
+		fmt.Println("in OPTIONS /v1/signup")
 		setCorsHeaders(c)
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
