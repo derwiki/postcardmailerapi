@@ -34,6 +34,11 @@ type PreviewPost struct {
 	From        Address
 }
 
+type SignupPost struct {
+	EMAIL    string `json:"email"`
+	PASSWORD string `json:"password"`
+}
+
 func dbTest() {
 	connStr := os.Getenv("DATABASE_URL")
 	db, err := sql.Open("postgres", connStr)
@@ -138,6 +143,13 @@ func main() {
 	})
 
 	router.POST("/v1/signup", func(c *gin.Context) {
+		fmt.Println("in POST /v1/signup")
+		var signupPost SignupPost
+		err := c.BindJSON(&signupPost)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(signupPost.EMAIL, signupPost.PASSWORD)
 		fmt.Println(c.Params)
 		setCorsHeaders(c)
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
