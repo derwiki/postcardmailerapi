@@ -152,7 +152,7 @@ func main() {
 		fmt.Println(signupPost.EMAIL, signupPost.PASSWORD)
 		fmt.Println(c.Params)
 		setCorsHeaders(c)
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+		c.JSON(http.StatusOK, gin.H{"status": "ok", "email": signupPost.EMAIL})
 	})
 	router.OPTIONS("/v1/signup", func(c *gin.Context) {
 		fmt.Println("in OPTIONS /v1/signup")
