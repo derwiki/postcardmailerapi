@@ -60,7 +60,6 @@ func AddressesListGetHandler(c *gin.Context) {
 
 	defer rows.Close()
 	respJson := gin.H{}
-	// var foos []string; // TODO(Derwiki) this response is getting garbly, try another way
 	for rows.Next() {
 		var id int
 		var name string
