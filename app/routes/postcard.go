@@ -15,10 +15,11 @@ import (
 )
 
 type PostcardPreviewRequestSchema struct {
-	Front string
-	Back  string
-	To    []schemas.Address
-	From  schemas.Address
+	Front  string
+	Back   string
+	To     []schemas.Address
+	From   schemas.Address
+	UserId int
 }
 
 type PreviewPostcardApiRequestSchema struct {
@@ -29,6 +30,15 @@ type PreviewPostcardApiRequestSchema struct {
 	Back        string
 	To          schemas.Address
 	From        schemas.Address
+}
+
+type UnprocessableEntityErrorResponseSchema struct {
+	Message    string
+	StatusCode int
+}
+
+type UnprocessableEntityResponseSchema struct {
+	Error UnprocessableEntityErrorResponseSchema
 }
 
 func PostcardPreviewPostHandler(c *gin.Context) {
@@ -100,6 +110,20 @@ func PreviewPostcardApiRequest(ch chan<- string, postcardPreviewRequest Postcard
 	if err != nil {
 		fmt.Printf("err: ReadAll: %s", err)
 	}
+
+	if resp.StatusCode == 422 {
+		fmt.Println("status code 422", resp.Status)
+		var unprocessableEntity UnprocessableEntityResponseSchema
+		json.Unmarshal(body, &unprocessableEntity)
+		fmt.Printf("%+v", unprocessableEntity)
+		// TODO(derwiki) make sure to handle this case with one user, it happens a lot
+	}
+	if resp.StatusCode == 200 {
+		var directMailPostcardPost DirectMailPostcardPostResponseSchema
+		json.Unmarshal(body, &directMailPostcardPost)
+		fmt.Printf("%+v", directMailPostcardPost)
+		// TODO(derwiki) save to DB
+	}
 	ch <- string(body)
 }
 
@@ -107,4 +131,41 @@ func PostcardPreviewOptionsHandler(c *gin.Context) {
 	fmt.Println("in OPTIONS /v1/postcards/preview")
 	helpers.SetCorsHeaders(c)
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+}
+
+type ThumbnailsResponseSchema struct {
+	Large  string
+	Medium string
+	Small  string
+}
+type AddressResponseSchema struct {
+	AddressLine1 string
+	AddressLine2 string
+	City         string
+	Name         string
+	State        string
+	Zip          string
+}
+type DirectMailPostcardPostResponseSchema struct {
+	EstimatedDeliveryDate string
+	ActualDeliveryDate    string
+	MailingDate           string
+	Front                 string
+	Back                  string
+	BackThumbnails        ThumbnailsResponseSchema
+	FrontThumbnails       ThumbnailsResponseSchema
+	From                  AddressResponseSchema
+	To                    AddressResponseSchema
+	Canceled              bool
+	Cost                  int
+	Created               string
+	Description           string
+	DryRun                bool
+	Medium                string
+	PostalCarrier         string
+	PostalClass           string
+	PrintRecord           string
+	RenderedPdf           string
+	Size                  string
+	Status                string
 }

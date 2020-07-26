@@ -21,6 +21,8 @@ func main() {
 
 	router.POST("/v1/signup", routes.SignupPostHandler)
 	router.OPTIONS("/v1/signup", routes.SignupOptionsHandler)
+	router.GET("/v1/addresses", routes.AddressesListGetHandler)
+	router.OPTIONS("/v1/addresses", routes.AddressesListOptionsHandler)
 	router.POST("/v1/postcard/preview", routes.PostcardPreviewPostHandler)
 	router.OPTIONS("/v1/postcard/preview", routes.PostcardPreviewOptionsHandler)
 	router.POST("/v1/playground/dbtest", routes.DbTestPostHandler)
