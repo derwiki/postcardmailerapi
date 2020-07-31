@@ -11,7 +11,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 )
 
 type PostcardPreviewRequestSchema struct {
@@ -41,9 +40,14 @@ type UnprocessableEntityResponseSchema struct {
 	Error UnprocessableEntityErrorResponseSchema
 }
 
+type MyResponse struct {
+	StatusCode int
+	Body       []byte
+}
+
 func PostcardPreviewPostHandler(c *gin.Context) {
 	helpers.SetCorsHeaders(c)
-	var responses []string
+	var responses []MyResponse
 
 	var postcardPreviewRequest PostcardPreviewRequestSchema
 	err := c.BindJSON(&postcardPreviewRequest)
@@ -52,7 +56,7 @@ func PostcardPreviewPostHandler(c *gin.Context) {
 	}
 	fmt.Println(postcardPreviewRequest)
 
-	ch := make(chan string)
+	ch := make(chan MyResponse)
 	concurrencyLevel := len(postcardPreviewRequest.To)
 
 	for i := 0; i < concurrencyLevel; i++ {
@@ -60,18 +64,42 @@ func PostcardPreviewPostHandler(c *gin.Context) {
 	}
 
 	var respJson = gin.H{}
+	var Successes []DirectMailPostcardPostResponseSchema
+	var Failures []UnprocessableEntityResponseSchema
 	for i := 0; i < concurrencyLevel; i++ {
-		buffer := <-ch
+		my_resp := <-ch
 		fmt.Println("received", i)
-		respJson[strconv.Itoa(i)] = buffer
-		responses = append(responses, buffer)
+		//respJson[strconv.Itoa(i)] = resp
+		responses = append(responses, my_resp)
+
+		if err != nil {
+			fmt.Printf("err: ReadAll: %s", err)
+		}
+
+		if my_resp.StatusCode == 422 {
+			fmt.Println("status code 422")
+			var unprocessableEntity UnprocessableEntityResponseSchema
+			json.Unmarshal(my_resp.Body, &unprocessableEntity)
+			fmt.Printf("%+v", unprocessableEntity)
+			Failures = append(Failures, unprocessableEntity)
+			// TODO(derwiki) make sure to handle this case with one user, it happens a lot
+		}
+		if my_resp.StatusCode == 200 {
+			var directMailPostcardPost DirectMailPostcardPostResponseSchema
+			json.Unmarshal(my_resp.Body, &directMailPostcardPost)
+			fmt.Printf("%+v", directMailPostcardPost)
+			Successes = append(Successes, directMailPostcardPost)
+			// TODO(derwiki) save to DB
+		}
 	}
 	fmt.Println("len(responses)", len(responses))
+	respJson[`Successes`] = Successes
+	respJson[`Failures`] = Failures
 
 	c.JSON(200, respJson)
 }
 
-func PreviewPostcardApiRequest(ch chan<- string, postcardPreviewRequest PostcardPreviewRequestSchema, to schemas.Address) {
+func PreviewPostcardApiRequest(ch chan<- MyResponse, postcardPreviewRequest PostcardPreviewRequestSchema, to schemas.Address) {
 	fmt.Println("PreviewPostcardApiRequest enter")
 	BaseUrl := "https://print.directmailers.com/api/v1/postcard/"
 	DirectmailApiKey := os.Getenv("DIRECT_MAIL_KEY")
@@ -106,25 +134,13 @@ func PreviewPostcardApiRequest(ch chan<- string, postcardPreviewRequest Postcard
 	}
 
 	defer resp.Body.Close()
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Printf("err: ReadAll: %s", err)
 	}
 
-	if resp.StatusCode == 422 {
-		fmt.Println("status code 422", resp.Status)
-		var unprocessableEntity UnprocessableEntityResponseSchema
-		json.Unmarshal(body, &unprocessableEntity)
-		fmt.Printf("%+v", unprocessableEntity)
-		// TODO(derwiki) make sure to handle this case with one user, it happens a lot
-	}
-	if resp.StatusCode == 200 {
-		var directMailPostcardPost DirectMailPostcardPostResponseSchema
-		json.Unmarshal(body, &directMailPostcardPost)
-		fmt.Printf("%+v", directMailPostcardPost)
-		// TODO(derwiki) save to DB
-	}
-	ch <- string(body)
+	ch <- MyResponse{resp.StatusCode, body}
 }
 
 func PostcardPreviewOptionsHandler(c *gin.Context) {
