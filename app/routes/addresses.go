@@ -4,19 +4,27 @@ import (
 	"database/sql"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
-	helpers "github.com/derwiki/postcardmailerapi/app"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 )
+
+// AddressHandler contains the handler for address related endpoints
+type AddressesHandler struct {
+	DB *sql.DB
+}
+
+func (a AddressesHandler) AddRoutes(router gin.IRouter) {
+	router.GET("/v1/addresses", a.AddressesListGetHandler)
+	router.OPTIONS("/v1/addresses", a.AddressesListOptionsHandler)
+}
 
 type AddressesListGetSchema struct {
 	UserId int `form:"user_id"`
 }
 
-func AddressesListGetHandler(c *gin.Context) {
+func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
 	fmt.Println("in GET /v1/addresses")
 	var addressesListGetSchema AddressesListGetSchema
 
@@ -27,14 +35,8 @@ func AddressesListGetHandler(c *gin.Context) {
 
 	UserId := addressesListGetSchema.UserId
 
-	helpers.SetCorsHeaders(c)
-
-	connStr := os.Getenv("DATABASE_URL")
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		log.Println("opening db")
-		log.Fatal(err)
-	}
+	// Done in middleware
+	// helpers.SetCorsHeaders(c)
 
 	// StmtCache caches Prepared Stmts for you
 	// dbCache := sq.NewStmtCacher(db)
@@ -47,14 +49,16 @@ func AddressesListGetHandler(c *gin.Context) {
 	sql, args, err := psql.Select("id", "name", "address1", "address2", "city", "state", "postal_code").From("addresses").Where(sq.Eq{"user_id": UserId}).ToSql()
 	if err != nil {
 		log.Println("constructing query")
+		// You should return error here
 		log.Fatal(err)
 	}
 	log.Println("sql", sql)
 	log.Println("args", args)
 
-	rows, err := db.Query(sql, args...)
+	rows, err := a.DB.Query(sql, args...)
 	if err != nil {
 		log.Println("executing query")
+		// You should return error here
 		log.Fatal(err)
 	}
 
@@ -87,8 +91,9 @@ func AddressesListGetHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, respJson)
 }
 
-func AddressesListOptionsHandler(c *gin.Context) {
-	fmt.Println("in OPTIONS /v1/addresses")
-	helpers.SetCorsHeaders(c)
-	c.JSON(http.StatusOK, gin.H{})
+func (a AddressesHandler) AddressesListOptionsHandler(c *gin.Context) {
+	// Done in middleware
+	//	fmt.Println("in OPTIONS /v1/addresses")
+	//	helpers.SetCorsHeaders(c)
+	//c.JSON(http.StatusOK, gin.H{})
 }
