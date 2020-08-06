@@ -118,10 +118,10 @@ func (hnd PostcardHandler) PostcardPreviewPostHandler(c *gin.Context) {
 	wg := sync.WaitGroup{}
 	for i := 0; i < concurrencyLevel; i++ {
 		wg.Add(1)
-		go func() {
+		go func(index int) {
 			defer wg.Done()
-			hnd.PreviewPostcardApiRequest(ctx, ch, postcardPreviewRequest, postcardPreviewRequest.To[i])
-		}()
+			hnd.PreviewPostcardApiRequest(ctx, ch, postcardPreviewRequest, postcardPreviewRequest.To[index])
+		}(i)
 	}
 
 	wg.Wait()
