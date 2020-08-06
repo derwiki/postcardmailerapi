@@ -2,6 +2,7 @@ package routes
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 )
 
 type PostcardHandler struct {
@@ -69,6 +71,9 @@ func (hnd PostcardHandler) PostcardPreviewPostHandler(c *gin.Context) {
 
 	ch := make(chan MyResponse)
 	concurrencyLevel := len(postcardPreviewRequest.To)
+	// 10 sec timeout.
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	defer cancel()
 
 	// This works, but if goroutine terminates before sending a message
 	// to the channel you'll never receive this many messages. Main
@@ -115,7 +120,7 @@ func (hnd PostcardHandler) PostcardPreviewPostHandler(c *gin.Context) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			hnd.PreviewPostcardApiRequest(ch, postcardPreviewRequest, postcardPreviewRequest.To[i])
+			hnd.PreviewPostcardApiRequest(ctx, ch, postcardPreviewRequest, postcardPreviewRequest.To[i])
 		}()
 	}
 
@@ -129,7 +134,7 @@ func (hnd PostcardHandler) PostcardPreviewPostHandler(c *gin.Context) {
 	c.JSON(200, respJson)
 }
 
-func (hnd PostcardHandler) PreviewPostcardApiRequest(ch chan<- MyResponse, postcardPreviewRequest PostcardPreviewRequestSchema, to schemas.Address) {
+func (hnd PostcardHandler) PreviewPostcardApiRequest(ctx context.Context, ch chan<- MyResponse, postcardPreviewRequest PostcardPreviewRequestSchema, to schemas.Address) {
 	fmt.Println("PreviewPostcardApiRequest enter")
 	BaseUrl := "https://print.directmailers.com/api/v1/postcard/"
 
@@ -151,6 +156,7 @@ func (hnd PostcardHandler) PreviewPostcardApiRequest(ch chan<- MyResponse, postc
 	if err != nil {
 		fmt.Printf("err: NewRequest: %s", err)
 	}
+	req = req.WithContext(ctx)
 
 	req.Header.Set("Content-Type", `application/json`)
 	req.Header.Set("Accept", `application/json`)
