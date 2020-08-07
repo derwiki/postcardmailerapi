@@ -86,7 +86,9 @@ func (hnd PostcardHandler) PostcardPreviewPostHandler(c *gin.Context) {
 	var Successes []DirectMailPostcardPostResponseSchema
 	var Failures []UnprocessableEntityResponseSchema
 
+	done := make(chan struct{})
 	go func() {
+		defer close(done)
 		for my_resp := range ch {
 			fmt.Println("received")
 			//respJson[strconv.Itoa(i)] = resp
@@ -127,6 +129,8 @@ func (hnd PostcardHandler) PostcardPreviewPostHandler(c *gin.Context) {
 	wg.Wait()
 	// Stop the processor goroutine
 	close(ch)
+	// Wait for it to end
+	<-done
 	fmt.Println("len(responses)", len(responses))
 	respJson[`Successes`] = Successes
 	respJson[`Failures`] = Failures
