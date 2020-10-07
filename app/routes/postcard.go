@@ -62,6 +62,10 @@ type MyResponse struct {
 func (hnd PostcardHandler) PostcardPreviewPostHandler(c *gin.Context) {
 	cookie, err := c.Cookie("SessionId")
 	if err != nil {
+		if err == http.ErrNoCookie {
+			c.JSON(http.StatusUnauthorized, gin.H{"status": "unauthorized"})
+			return
+		}
 		log.Fatal(err)
 	}
 	fmt.Println("cookie", cookie)
