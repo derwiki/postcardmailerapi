@@ -24,8 +24,7 @@ func SigninPostHandler(c *gin.Context) {
 	var SessionId string
 	SessionId, err = c.Cookie("SessionId")
 	fmt.Println(signinPost.Email, signinPost.Password, SessionId)
-	// addCookie(w, "TestCookieName", "TestValue", 30*time.Minute)
-	c.SetCookie("SessionId", "26d64bcb-b428-4508-b629-522cb4b01b0e", 3600, "/", "", false, true)
+	c.SetCookie("SessionId", "26d64bcb-b428-4508-b629-522cb4b01b0e", 3600, "/", "", true, true)
 	c.SetSameSite(http.SameSiteNoneMode)
 	helpers.SetCorsHeaders(c)
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "email": signinPost.Email})
