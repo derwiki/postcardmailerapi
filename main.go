@@ -43,6 +43,8 @@ func main() {
 	// Similar handler for SignupPost
 	router.POST("/v1/signup", routes.SignupPostHandler)
 	router.OPTIONS("/v1/signup", routes.SignupOptionsHandler)
+	router.POST("/v1/signin", routes.SigninPostHandler)
+	router.OPTIONS("/v1/signin", routes.SigninOptionsHandler)
 
 	router.Run(":" + port)
 }

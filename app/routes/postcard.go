@@ -59,11 +59,15 @@ type MyResponse struct {
 }
 
 func (hnd PostcardHandler) PostcardPreviewPostHandler(c *gin.Context) {
-	//helpers.SetCorsHeaders(c)
+	cookie, err := c.Cookie("SessionId")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("cookie", cookie)
 	var responses []MyResponse
 
 	var postcardPreviewRequest PostcardPreviewRequestSchema
-	err := c.BindJSON(&postcardPreviewRequest)
+	err = c.BindJSON(&postcardPreviewRequest)
 	if err != nil {
 		log.Fatal(err)
 	}
