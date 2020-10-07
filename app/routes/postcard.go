@@ -6,13 +6,14 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/derwiki/postcardmailerapi/app/schemas"
-	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/derwiki/postcardmailerapi/app/schemas"
+	"github.com/gin-gonic/gin"
 )
 
 type PostcardHandler struct {

@@ -3,13 +3,14 @@ package main
 import (
 	"database/sql"
 
+	"log"
+	"os"
+
 	helpers "github.com/derwiki/postcardmailerapi/app"
 	"github.com/derwiki/postcardmailerapi/app/routes"
 	"github.com/gin-gonic/gin"
 	_ "github.com/heroku/x/hmetrics/onload"
 	_ "github.com/lib/pq"
-	"log"
-	"os"
 )
 
 func main() {
