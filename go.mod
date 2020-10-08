@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	github.com/Masterminds/squirrel v1.4.0
+	github.com/consyse/go-devise-encryptor v0.0.0-20160304214921-748622f4c983
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-playground/validator/v10 v10.4.0 // indirect
 	github.com/golang/protobuf v1.4.2 // indirect
