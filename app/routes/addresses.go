@@ -38,29 +38,28 @@ func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
 		log.Fatal(err)
 	}
 
-	var user_id int
+	var UserID int
 	var issued_at time.Time
 	rows, err := a.DB.Query("SELECT user_id, issued_at FROM sessions WHERE session_id = $1", SessionID)
 	if err != nil {
-		fmt.Println("DevisePostHandler: performed query: err", err)
+		fmt.Println("AddressesListGetHandler: performed query: err", err)
 	}
 
 	defer rows.Close()
 	if rows == nil {
-		fmt.Println("DevisePostHandler: no user found for SessionID", SessionID)
+		fmt.Println("AddressesListGetHandler: no user found for SessionID", SessionID)
 		// TODO(derwiki) change this to a better response
 		c.JSON(http.StatusNotFound, gin.H{})
 		return
-	} else {
-		rows.Next()
-		err = rows.Scan(&user_id, &issued_at)
-		if err != nil {
-			fmt.Println("DevisePostHandler: rows scan: err", err)
-			c.JSON(http.StatusForbidden, gin.H{})
-			return
-		}
-		fmt.Println("user_id", user_id, "issued_at", issued_at)
 	}
+	rows.Next()
+	err = rows.Scan(&UserID, &issued_at)
+	if err != nil {
+		fmt.Println("AddressesListGetHandler: rows scan: err", err)
+		c.JSON(http.StatusForbidden, gin.H{})
+		return
+	}
+	fmt.Println("UserID", UserID, "issued_at", issued_at)
 
 	var addressesListGetSchema AddressesListGetSchema
 
@@ -68,8 +67,6 @@ func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	UserId := user_id
 
 	// Done in middleware
 	// helpers.SetCorsHeaders(c)
@@ -82,9 +79,9 @@ func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
 	// select_users := mydb.Select("*").From("users")
 
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	sql, args, err := psql.Select("id", "name", "address1", "address2", "city", "state", "postal_code").From("addresses").Where(sq.Eq{"user_id": UserId}).ToSql()
+	sql, args, err := psql.Select("id", "name", "address1", "address2", "city", "state", "postal_code").From("addresses").Where(sq.Eq{"user_id": UserID}).ToSql()
 	if err != nil {
-		log.Println("constructing query")
+		log.Println("AddressesListGetHandler constructing query")
 		// You should return error here
 		log.Fatal(err)
 	}
@@ -93,7 +90,7 @@ func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
 
 	rows, err = a.DB.Query(sql, args...)
 	if err != nil {
-		log.Println("executing query")
+		log.Println("AddressesListGetHandler executing query")
 		// You should return error here
 		log.Fatal(err)
 	}

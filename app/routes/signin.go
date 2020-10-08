@@ -54,14 +54,13 @@ func (sh SigninHandler) SigninPostHandler(c *gin.Context) {
 		// TODO(derwiki) change this to a better response
 		c.JSON(http.StatusNotFound, gin.H{})
 		return
-	} else {
-		rows.Next()
-		err = rows.Scan(&id, &encrypted_password)
-		if err != nil {
-			fmt.Println("DevisePostHandler: rows scan: err", err)
-		}
-		fmt.Println("id", id, "password", encrypted_password)
 	}
+	rows.Next()
+	err = rows.Scan(&id, &encrypted_password)
+	if err != nil {
+		fmt.Println("DevisePostHandler: rows scan: err", err)
+	}
+	fmt.Println("id", id, "password", encrypted_password)
 
 	val := devisecrypto.Compare(signinPost.Password, "", encrypted_password)
 	if val == false {
