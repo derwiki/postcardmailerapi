@@ -3,11 +3,13 @@ package routes
 import (
 	"database/sql"
 	"fmt"
-	sq "github.com/Masterminds/squirrel"
-	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"strconv"
+	"time"
+
+	sq "github.com/Masterminds/squirrel"
+	"github.com/gin-gonic/gin"
 )
 
 // AddressHandler contains the handler for address related endpoints
@@ -26,14 +28,48 @@ type AddressesListGetSchema struct {
 
 func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
 	fmt.Println("in GET /v1/addresses")
+
+	SessionID, err := c.Cookie("SessionId")
+	if err != nil {
+		if err == http.ErrNoCookie {
+			c.JSON(http.StatusUnauthorized, gin.H{"status": "unauthorized"})
+			return
+		}
+		log.Fatal(err)
+	}
+
+	var user_id int
+	var issued_at time.Time
+	rows, err := a.DB.Query("SELECT user_id, issued_at FROM sessions WHERE session_id = $1", SessionID)
+	if err != nil {
+		fmt.Println("DevisePostHandler: performed query: err", err)
+	}
+
+	defer rows.Close()
+	if rows == nil {
+		fmt.Println("DevisePostHandler: no user found for SessionID", SessionID)
+		// TODO(derwiki) change this to a better response
+		c.JSON(http.StatusNotFound, gin.H{})
+		return
+	} else {
+		rows.Next()
+		err = rows.Scan(&user_id, &issued_at)
+		if err != nil {
+			fmt.Println("DevisePostHandler: rows scan: err", err)
+			c.JSON(http.StatusForbidden, gin.H{})
+			return
+		}
+		fmt.Println("user_id", user_id, "issued_at", issued_at)
+	}
+
 	var addressesListGetSchema AddressesListGetSchema
 
-	err := c.Bind(&addressesListGetSchema)
+	err = c.Bind(&addressesListGetSchema)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	UserId := addressesListGetSchema.UserId
+	UserId := user_id
 
 	// Done in middleware
 	// helpers.SetCorsHeaders(c)
@@ -55,7 +91,7 @@ func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
 	log.Println("sql", sql)
 	log.Println("args", args)
 
-	rows, err := a.DB.Query(sql, args...)
+	rows, err = a.DB.Query(sql, args...)
 	if err != nil {
 		log.Println("executing query")
 		// You should return error here
