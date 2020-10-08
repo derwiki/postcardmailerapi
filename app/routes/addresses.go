@@ -6,9 +6,9 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"time"
 
 	sq "github.com/Masterminds/squirrel"
+	helpers "github.com/derwiki/postcardmailerapi/app"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,44 +26,11 @@ type AddressesListGetSchema struct {
 	UserId int `form:"user_id"`
 }
 
-func getLoggedInUserID(c *gin.Context, a AddressesHandler) int {
-	SessionID, err := c.Cookie("SessionId")
-	if err != nil {
-		if err == http.ErrNoCookie {
-			c.JSON(http.StatusUnauthorized, gin.H{"status": "unauthorized"})
-			return 0
-		}
-		log.Fatal(err)
-	}
-
-	var UserID int
-	var issued_at time.Time
-	rows, err := a.DB.Query("SELECT user_id, issued_at FROM sessions WHERE session_id = $1", SessionID)
-	if err != nil {
-		fmt.Println("AddressesListGetHandler: performed query: err", err)
-	}
-
-	defer rows.Close()
-	rows.Next()
-	err = rows.Scan(&UserID, &issued_at)
-	if err != nil {
-		fmt.Println("AddressesListGetHandler: no user found for SessionID", SessionID)
-		c.JSON(http.StatusForbidden, gin.H{})
-		return 0
-	}
-	err = rows.Err()
-	if err != nil {
-		fmt.Println("AddressesListGetHandler: row.Err", rows.Err())
-	}
-	fmt.Println("UserID", UserID, "issued_at", issued_at)
-	return UserID
-}
-
 func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
 	fmt.Println("in GET /v1/addresses")
 
 	// BEGIN checking authentication cookie
-	UserID := getLoggedInUserID(c, a)
+	UserID := helpers.GetLoggedInUserID(c, a.DB)
 	if UserID == 0 {
 		fmt.Println("not logged in")
 		return
@@ -78,16 +45,6 @@ func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// Done in middleware
-	// helpers.SetCorsHeaders(c)
-
-	// StmtCache caches Prepared Stmts for you
-	// dbCache := sq.NewStmtCacher(db)
-
-	// StatementBuilder keeps your syntax neat
-	// mydb := sq.StatementBuilder.RunWith(dbCache)
-	// select_users := mydb.Select("*").From("users")
 
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	sql, args, err := psql.Select("id", "name", "address1", "address2", "city", "state", "postal_code").From("addresses").Where(sq.Eq{"user_id": UserID}).ToSql()

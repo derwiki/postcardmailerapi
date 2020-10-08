@@ -24,7 +24,7 @@ func main() {
 
 	router := gin.New()
 	router.Use(gin.Logger())
-	// Consider doing this, and removing all calls to SetCorsHeaders
+
 	router.Use(func(c *gin.Context) {
 		helpers.SetCorsHeaders(c)
 		c.Next()
