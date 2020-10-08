@@ -29,6 +29,7 @@ type AddressesListGetSchema struct {
 func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
 	fmt.Println("in GET /v1/addresses")
 
+	// BEGIN checking authentication cookie
 	SessionID, err := c.Cookie("SessionId")
 	if err != nil {
 		if err == http.ErrNoCookie {
@@ -46,20 +47,20 @@ func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
 	}
 
 	defer rows.Close()
-	if rows == nil {
-		fmt.Println("AddressesListGetHandler: no user found for SessionID", SessionID)
-		// TODO(derwiki) change this to a better response
-		c.JSON(http.StatusNotFound, gin.H{})
-		return
-	}
 	rows.Next()
 	err = rows.Scan(&UserID, &issued_at)
 	if err != nil {
-		fmt.Println("AddressesListGetHandler: rows scan: err", err)
+		fmt.Println("AddressesListGetHandler: no user found for SessionID", SessionID)
 		c.JSON(http.StatusForbidden, gin.H{})
 		return
 	}
+	err = rows.Err()
+	if err != nil {
+		fmt.Println("AddressesListGetHandler: row.Err", rows.Err())
+	}
 	fmt.Println("UserID", UserID, "issued_at", issued_at)
+	// TODO(derwiki) make sure issued_at is recent 2 hours (or whatever)
+	// END checking authentication cookie
 
 	var addressesListGetSchema AddressesListGetSchema
 
