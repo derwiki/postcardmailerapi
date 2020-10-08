@@ -92,7 +92,7 @@ func (sh SigninHandler) SigninPostHandler(c *gin.Context) {
 		secure = false
 		c.SetSameSite(http.SameSiteNoneMode)
 	} else {
-		c.SetSameSite(http.SameSiteStrictMode)
+		c.SetSameSite(http.SameSiteLaxMode)
 	}
 	httpOnly := true
 	c.SetCookie("SessionId", sessionToken, 3600, "/v1/", "", secure, httpOnly)
