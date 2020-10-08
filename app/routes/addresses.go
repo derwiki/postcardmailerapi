@@ -26,15 +26,12 @@ type AddressesListGetSchema struct {
 	UserId int `form:"user_id"`
 }
 
-func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
-	fmt.Println("in GET /v1/addresses")
-
-	// BEGIN checking authentication cookie
+func getLoggedInUserID(c *gin.Context, a AddressesHandler) int {
 	SessionID, err := c.Cookie("SessionId")
 	if err != nil {
 		if err == http.ErrNoCookie {
 			c.JSON(http.StatusUnauthorized, gin.H{"status": "unauthorized"})
-			return
+			return 0
 		}
 		log.Fatal(err)
 	}
@@ -52,19 +49,32 @@ func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
 	if err != nil {
 		fmt.Println("AddressesListGetHandler: no user found for SessionID", SessionID)
 		c.JSON(http.StatusForbidden, gin.H{})
-		return
+		return 0
 	}
 	err = rows.Err()
 	if err != nil {
 		fmt.Println("AddressesListGetHandler: row.Err", rows.Err())
 	}
 	fmt.Println("UserID", UserID, "issued_at", issued_at)
+	return UserID
+}
+
+func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
+	fmt.Println("in GET /v1/addresses")
+
+	// BEGIN checking authentication cookie
+	UserID := getLoggedInUserID(c, a)
+	if UserID == 0 {
+		fmt.Println("not logged in")
+		return
+	}
+	fmt.Println("already logged in")
 	// TODO(derwiki) make sure issued_at is recent 2 hours (or whatever)
 	// END checking authentication cookie
 
 	var addressesListGetSchema AddressesListGetSchema
 
-	err = c.Bind(&addressesListGetSchema)
+	err := c.Bind(&addressesListGetSchema)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -89,7 +99,7 @@ func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
 	log.Println("sql", sql)
 	log.Println("args", args)
 
-	rows, err = a.DB.Query(sql, args...)
+	rows, err := a.DB.Query(sql, args...)
 	if err != nil {
 		log.Println("AddressesListGetHandler executing query")
 		// You should return error here
