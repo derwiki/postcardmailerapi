@@ -75,8 +75,8 @@ func (sh SigninHandler) SigninPostHandler(c *gin.Context) {
 		}
 		fmt.Println("rows", rows)
 
-		c.SetCookie("SessionId", sessionToken, 3600, "/", "", true, true)
 		c.SetSameSite(http.SameSiteNoneMode)
+		c.SetCookie("SessionId", sessionToken, 3600, "/", "", true, true)
 		// session.Set("SessionId", sessionToken)
 
 	}
