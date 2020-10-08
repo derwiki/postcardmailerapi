@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -86,8 +87,15 @@ func (sh SigninHandler) SigninPostHandler(c *gin.Context) {
 	}
 	fmt.Println("rows", rows)
 
-	c.SetSameSite(http.SameSiteNoneMode)
-	c.SetCookie("SessionId", sessionToken, 3600, "/v1/", "", true, true)
+	secure := true
+	if os.Getenv("APPLICATION_ENV") == "development" {
+		secure = false
+		c.SetSameSite(http.SameSiteNoneMode)
+	} else {
+		c.SetSameSite(http.SameSiteStrictMode)
+	}
+	httpOnly := true
+	c.SetCookie("SessionId", sessionToken, 3600, "/v1/", "", secure, httpOnly)
 	// session.Set("SessionId", sessionToken)
 
 	helpers.SetCorsHeaders(c)
