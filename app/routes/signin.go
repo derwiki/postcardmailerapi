@@ -51,7 +51,8 @@ func (sh SigninHandler) SigninPostHandler(c *gin.Context) {
 	if rows == nil {
 		fmt.Println("DevisePostHandler: no user found for email", email)
 		// TODO(derwiki) change this to a better response
-		c.JSON(http.StatusOK, gin.H{})
+		c.JSON(http.StatusNotFound, gin.H{})
+		return
 	} else {
 		rows.Next()
 		err = rows.Scan(&id, &encrypted_password)
@@ -62,24 +63,33 @@ func (sh SigninHandler) SigninPostHandler(c *gin.Context) {
 	}
 
 	val := devisecrypto.Compare(signinPost.Password, "", encrypted_password)
-	fmt.Println(`Passwords are the same?`, val)
-	if val {
-		fmt.Println(`Setting logged-in cookie`)
-		// Create a new random session token
-		sessionToken := uuid.New().String()
-		fmt.Println("Created sessionToken", sessionToken)
-		now := time.Now()
-		rows, err := sh.DB.Query("INSERT INTO sessions (user_id, session_id, issued_at, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (user_id) DO UPDATE SET session_id = $2, issued_at = $3, updated_at = $5 WHERE sessions.user_id = $1", id, sessionToken, now, now, now)
-		if err != nil {
-			fmt.Println("DevisePostHandler: performed query: err", err)
-		}
-		fmt.Println("rows", rows)
-
-		c.SetSameSite(http.SameSiteNoneMode)
-		c.SetCookie("SessionId", sessionToken, 3600, "/", "", true, true)
-		// session.Set("SessionId", sessionToken)
-
+	if val == false {
+		c.JSON(http.StatusForbidden, gin.H{})
+		return
 	}
+
+	fmt.Println(`Setting logged-in cookie`)
+	// Create a new random session token
+	sessionToken := uuid.New().String()
+	fmt.Println("Created sessionToken", sessionToken)
+	now := time.Now()
+	rows, err = sh.DB.Query(`
+		INSERT INTO sessions (user_id, session_id, issued_at, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5)
+		ON CONFLICT (user_id)
+		DO UPDATE SET session_id = $2, issued_at = $3, updated_at = $5
+		WHERE sessions.user_id = $1
+		`, id, sessionToken, now, now, now)
+	if err != nil {
+		fmt.Println("DevisePostHandler: performed query: err", err)
+		c.JSON(http.StatusUnprocessableEntity, gin.H{})
+	}
+	fmt.Println("rows", rows)
+
+	c.SetSameSite(http.SameSiteNoneMode)
+	c.SetCookie("SessionId", sessionToken, 3600, "/v1/", "", true, true)
+	// session.Set("SessionId", sessionToken)
+
 	helpers.SetCorsHeaders(c)
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "email": signinPost.Email})
 }
