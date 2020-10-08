@@ -80,16 +80,6 @@ func (hnd DBTestHandler) DevisePostHandler(c *gin.Context) {
 
 	pepper := ""
 
-	/*
-		hashedPassword, err := devisecrypto.Digest(password, stretches, pepper)
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println("hashedPassword: ", hashedPassword)
-
-		// and to compare with a previously hashed password
-	*/
-
 	newPassword := "password1"
 	val := devisecrypto.Compare(newPassword, pepper, encrypted_password)
 	fmt.Println(`Passwords are the same?`, val)

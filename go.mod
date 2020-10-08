@@ -5,9 +5,11 @@ go 1.12
 require (
 	github.com/Masterminds/squirrel v1.4.0
 	github.com/consyse/go-devise-encryptor v0.0.0-20160304214921-748622f4c983
+	github.com/gin-contrib/sessions v0.0.3
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-playground/validator/v10 v10.4.0 // indirect
 	github.com/golang/protobuf v1.4.2 // indirect
+	github.com/google/uuid v1.1.2
 	github.com/heroku/x v0.0.0-20171004170240-705849e307dd
 	github.com/json-iterator/go v1.1.10 // indirect
 	github.com/lib/pq v1.7.0
