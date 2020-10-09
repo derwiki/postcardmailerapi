@@ -25,6 +25,8 @@ type PostcardHandler struct {
 func (hnd PostcardHandler) AddRoutes(router gin.IRouter) {
 	router.POST("/v1/postcard/preview", hnd.PostcardPreviewPostHandler)
 	router.OPTIONS("/v1/postcard/preview", hnd.PostcardPreviewOptionsHandler)
+	router.POST("/v1/postcard/send", hnd.PostcardSendPostHandler)
+	router.OPTIONS("/v1/postcard/send", hnd.PostcardPreviewOptionsHandler)
 }
 
 type PostcardPreviewRequestSchema struct {
@@ -60,17 +62,17 @@ type MyResponse struct {
 	Err        error
 }
 
-func (hnd PostcardHandler) PostcardPreviewPostHandler(c *gin.Context) {
+func (hnd PostcardHandler) PostcardPostHandler(c *gin.Context, dryrun bool) {
 	var responses []MyResponse
 	UserID := helpers.GetLoggedInUserID(c, hnd.DB)
-	fmt.Println("PostcardPreviewPostHandler: UserID", UserID)
+	fmt.Println("PostcardPreviewPostHandler: UserID", UserID, "dryrun", dryrun)
 
 	var postcardPreviewRequest PostcardPreviewRequestSchema
 	err := c.BindJSON(&postcardPreviewRequest)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(postcardPreviewRequest)
+	// fmt.Println(postcardPreviewRequest)
 
 	ch := make(chan MyResponse)
 	concurrencyLevel := len(postcardPreviewRequest.To)
@@ -85,34 +87,34 @@ func (hnd PostcardHandler) PostcardPreviewPostHandler(c *gin.Context) {
 	//   go	 hnd.PreviewPostcardApiRequest(ch, postcardPreviewRequest, postcardPreviewRequest.To[i])
 	// }
 
-	var respJson = gin.H{}
+	var Response = gin.H{}
 	var Successes []DirectMailPostcardPostResponseSchema
 	var Failures []UnprocessableEntityResponseSchema
 
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		for my_resp := range ch {
-			fmt.Println("received")
+		for DirectMailAPIResponse := range ch {
+			// fmt.Println("received")
 			//respJson[strconv.Itoa(i)] = resp
-			responses = append(responses, my_resp)
+			responses = append(responses, DirectMailAPIResponse)
 
-			if my_resp.Err != nil {
-				fmt.Printf("err: ReadAll: %s", my_resp.Err)
+			if DirectMailAPIResponse.Err != nil {
+				fmt.Printf("err: ReadAll: %s", DirectMailAPIResponse.Err)
 			} else {
 
-				if my_resp.StatusCode == 422 {
+				if DirectMailAPIResponse.StatusCode == 422 {
 					fmt.Println("status code 422")
 					var unprocessableEntity UnprocessableEntityResponseSchema
-					json.Unmarshal(my_resp.Body, &unprocessableEntity)
+					json.Unmarshal(DirectMailAPIResponse.Body, &unprocessableEntity)
 					fmt.Printf("%+v", unprocessableEntity)
 					Failures = append(Failures, unprocessableEntity)
 					// TODO(derwiki) make sure to handle this case with one user, it happens a lot
 				}
-				if my_resp.StatusCode == 200 {
+				if DirectMailAPIResponse.StatusCode == 200 {
 					var directMailPostcardPost DirectMailPostcardPostResponseSchema
-					json.Unmarshal(my_resp.Body, &directMailPostcardPost)
-					fmt.Printf("%+v", directMailPostcardPost)
+					json.Unmarshal(DirectMailAPIResponse.Body, &directMailPostcardPost)
+					// fmt.Printf("%+v", directMailPostcardPost)
 					Successes = append(Successes, directMailPostcardPost)
 					// TODO(derwiki) save to DB
 				}
@@ -125,7 +127,7 @@ func (hnd PostcardHandler) PostcardPreviewPostHandler(c *gin.Context) {
 		wg.Add(1)
 		go func(index int) {
 			defer wg.Done()
-			hnd.PreviewPostcardApiRequest(ctx, ch, postcardPreviewRequest, postcardPreviewRequest.To[index])
+			hnd.PreviewPostcardApiRequest(ctx, ch, postcardPreviewRequest, postcardPreviewRequest.To[index], dryrun)
 		}(i)
 	}
 
@@ -134,29 +136,29 @@ func (hnd PostcardHandler) PostcardPreviewPostHandler(c *gin.Context) {
 	close(ch)
 	// Wait for it to end
 	<-done
-	fmt.Println("len(responses)", len(responses))
-	respJson[`Successes`] = Successes
-	respJson[`Failures`] = Failures
+	// fmt.Println("len(responses)", len(responses))
+	Response[`Successes`] = Successes
+	Response[`Failures`] = Failures
 
-	c.JSON(200, respJson)
+	c.JSON(200, Response)
 }
 
-func (hnd PostcardHandler) PreviewPostcardApiRequest(ctx context.Context, ch chan<- MyResponse, postcardPreviewRequest PostcardPreviewRequestSchema, to schemas.Address) {
+func (hnd PostcardHandler) PreviewPostcardApiRequest(ctx context.Context, ch chan<- MyResponse, postcardPreviewRequest PostcardPreviewRequestSchema, to schemas.Address, dryrun bool) {
 	fmt.Println("PreviewPostcardApiRequest enter")
 	BaseUrl := "https://print.directmailers.com/api/v1/postcard/"
 
 	var previewPostcardApiRequest = PreviewPostcardApiRequestSchema{
-		Description: "test",
+		Description: "Testing from Golang",
 		Size:        "4.25x6",
-		DryRun:      true,
+		DryRun:      dryrun,
 		Front:       postcardPreviewRequest.Front,
 		Back:        postcardPreviewRequest.Back,
 		To:          to,
 		From:        postcardPreviewRequest.From,
 	}
-	fmt.Printf("%+v", previewPostcardApiRequest)
+	// fmt.Printf("%+v", previewPostcardApiRequest)
 	jsonValue, _ := json.Marshal(previewPostcardApiRequest)
-	fmt.Printf("%+v", jsonValue)
+	// fmt.Printf("%+v", jsonValue)
 
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", BaseUrl, bytes.NewReader(jsonValue))
@@ -168,7 +170,7 @@ func (hnd PostcardHandler) PreviewPostcardApiRequest(ctx context.Context, ch cha
 	req.Header.Set("Content-Type", `application/json`)
 	req.Header.Set("Accept", `application/json`)
 	req.Header.Set("Authorization", "Basic "+hnd.DirectmailApiKey)
-	fmt.Printf("%+v", req)
+	// fmt.Printf("%+v", req)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -190,11 +192,15 @@ func (hnd PostcardHandler) PreviewPostcardApiRequest(ctx context.Context, ch cha
 	ch <- MyResponse{resp.StatusCode, body, nil}
 }
 
-func (hnd PostcardHandler) PostcardPreviewOptionsHandler(c *gin.Context) {
-	//fmt.Println("in OPTIONS /v1/postcards/preview")
-	//helpers.SetCorsHeaders(c)
-	//c.JSON(http.StatusOK, gin.H{"status": "ok"})
+func (hnd PostcardHandler) PostcardPreviewPostHandler(c *gin.Context) {
+	PostcardHandler.PostcardPostHandler(hnd, c, true)
 }
+func (hnd PostcardHandler) PostcardSendPostHandler(c *gin.Context) {
+	PostcardHandler.PostcardPostHandler(hnd, c, false)
+}
+
+// middleware takes care of this
+func (hnd PostcardHandler) PostcardPreviewOptionsHandler(c *gin.Context) {}
 
 type ThumbnailsResponseSchema struct {
 	Large  string
