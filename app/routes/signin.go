@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 
 	devisecrypto "github.com/consyse/go-devise-encryptor"
@@ -45,7 +46,16 @@ func (sh SigninHandler) SigninPostHandler(c *gin.Context) {
 	fmt.Println(signinPost.Email, signinPost.Password)
 
 	email := signinPost.Email
-	rows, err := sh.DB.Query("SELECT id, encrypted_password FROM users WHERE email = $1", email)
+	// rows, err := sh.DB.Query("SELECT id, encrypted_password FROM users WHERE email = $1", email)
+
+	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	sql, args, err := psql.Select("id", "encrypted_password").From("users").Where(sq.Eq{"email": email}).ToSql()
+	if err != nil {
+		log.Println("SigninPostHandler constructing query")
+		c.JSON(http.StatusNotFound, gin.H{})
+		return
+	}
+	rows, err := sh.DB.Query(sql, args...)
 	if err != nil {
 		fmt.Println("SigninPostHandler: performed query: err", err)
 	}

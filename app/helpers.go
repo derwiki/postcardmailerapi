@@ -38,8 +38,7 @@ func GetLoggedInUserID(c *gin.Context, DB *sql.DB) int {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	sql, args, err := psql.Select("user_id", "issued_at").From("sessions").Where(sq.Eq{"session_id": SessionID}).ToSql()
 	if err != nil {
-		log.Println("GetLoggedInUserID2 constructing query")
-		// You should return error here
+		log.Println("GetLoggedInUserID constructing query")
 		log.Fatal(err)
 		return 0
 	}
