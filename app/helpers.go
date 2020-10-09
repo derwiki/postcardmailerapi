@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	sq "github.com/Masterminds/squirrel"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -33,9 +35,18 @@ func GetLoggedInUserID(c *gin.Context, DB *sql.DB) int {
 
 	var UserID int
 	var IssuedAt time.Time
-	rows, err := DB.Query("SELECT user_id, issued_at FROM sessions WHERE session_id = $1", SessionID)
+	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	sql, args, err := psql.Select("user_id", "issued_at").From("sessions").Where(sq.Eq{"session_id": SessionID}).ToSql()
 	if err != nil {
-		fmt.Println("AddressesListGetHandler: performed query: err", err)
+		log.Println("GetLoggedInUserID2 constructing query")
+		// You should return error here
+		log.Fatal(err)
+		return 0
+	}
+	rows, err := DB.Query(sql, args...)
+
+	if err != nil {
+		fmt.Println("GetLoggedInUserID: performed query: err", err)
 		return 0
 	}
 
@@ -43,15 +54,16 @@ func GetLoggedInUserID(c *gin.Context, DB *sql.DB) int {
 	rows.Next()
 	err = rows.Scan(&UserID, &IssuedAt)
 	if err != nil {
-		fmt.Println("AddressesListGetHandler: no user found for SessionID", SessionID)
+		fmt.Println("GetLoggedInUserID: no user found for SessionID", SessionID)
 		c.JSON(http.StatusForbidden, gin.H{})
 		return 0
 	}
 	err = rows.Err()
 	if err != nil {
-		fmt.Println("AddressesListGetHandler: row.Err", rows.Err())
+		fmt.Println("GetLoggedInUserID: row.Err", err)
 		return 0
 	}
 	fmt.Println("UserID", UserID, "IssuedAt", IssuedAt)
+
 	return UserID
 }
