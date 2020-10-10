@@ -14,54 +14,54 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type SigninPostSchema struct {
+type signinPostSchema struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
+// SigninHandler gives this route access to DB
 type SigninHandler struct {
 	DB *sql.DB
 }
 
+// AddRoutes hooks POST and OPTIONS into the main router
 func (sh SigninHandler) AddRoutes(router gin.IRouter) {
-	router.POST("/v1/signin", sh.SigninPostHandler)
-	router.OPTIONS("/v1/signin", sh.SigninOptionsHandler)
+	router.POST("/v1/signin", sh.signinPostHandler)
+	router.OPTIONS("/v1/signin", sh.signinOptionsHandler)
 }
 
-func (sh SigninHandler) SigninPostHandler(c *gin.Context) {
+func (sh SigninHandler) signinPostHandler(c *gin.Context) {
 	secure := true
 	if os.Getenv("APPLICATION_ENV") == "development" {
 		secure = false
 	}
 	c.SetSameSite(http.SameSiteNoneMode)
 	httpOnly := true
-	var encryptedPassword string
-	var id int
-	var signinPost SigninPostSchema
+
+	var signinPost signinPostSchema
 	err := c.BindJSON(&signinPost)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println(signinPost.Email, signinPost.Password)
+	log.Println(signinPost.Email)
 
-	email := signinPost.Email
-	// rows, err := sh.DB.Query("SELECT id, encrypted_password FROM users WHERE email = $1", email)
-
+	var encryptedPassword string
+	var id int
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	sql, args, err := psql.Select("id", "encrypted_password").From("users").Where(sq.Eq{"email": email}).ToSql()
+	sql, args, err := psql.Select("id", "encrypted_password").From("users").Where(sq.Eq{"email": signinPost.Email}).ToSql()
 	if err != nil {
-		log.Println("SigninPostHandler constructing query")
+		log.Println("signinPostHandler constructing query")
 		c.JSON(http.StatusNotFound, gin.H{})
 		return
 	}
 	rows, err := sh.DB.Query(sql, args...)
 	if err != nil {
-		log.Println("SigninPostHandler: performed query: err", err)
+		log.Println("signinPostHandler: performed query: err", err)
 	}
 
 	defer rows.Close()
 	if rows == nil {
-		log.Println("SigninPostHandler: no user found for email", email)
+		log.Println("signinPostHandler: no user found for email", signinPost.Email)
 		// TODO(derwiki) change this to a better response
 		c.JSON(http.StatusNotFound, gin.H{})
 		return
@@ -69,13 +69,13 @@ func (sh SigninHandler) SigninPostHandler(c *gin.Context) {
 	rows.Next()
 	err = rows.Scan(&id, &encryptedPassword)
 	if err != nil {
-		log.Println("SigninPostHandler: rows scan: err", err)
+		log.Println("signinPostHandler: rows scan: err", err)
 	}
 	log.Println("id", id, "password", encryptedPassword)
 
 	val := devisecrypto.Compare(signinPost.Password, "", encryptedPassword)
 	if val == false {
-		log.Println("SigninPostHandler: passwords don't match, clearing cookie")
+		log.Println("signinPostHandler: passwords don't match, clearing cookie")
 		c.SetCookie("SessionId", "", -3600, "/v1/", "", secure, httpOnly)
 		c.JSON(http.StatusForbidden, gin.H{})
 		return
@@ -83,7 +83,6 @@ func (sh SigninHandler) SigninPostHandler(c *gin.Context) {
 
 	// Create a new random session token
 	sessionToken := uuid.New().String()
-	log.Println("SigninPostHandler: sessionToken", sessionToken)
 	now := time.Now()
 	rows, err = sh.DB.Query(`
 		INSERT INTO sessions (user_id, session_id, issued_at, created_at, updated_at)
@@ -93,7 +92,7 @@ func (sh SigninHandler) SigninPostHandler(c *gin.Context) {
 		WHERE sessions.user_id = $1
 		`, id, sessionToken, now, now, now)
 	if err != nil {
-		log.Println("SigninPostHandler: performed query: err", err)
+		log.Println("signinPostHandler: performed query: err", err)
 		c.JSON(http.StatusUnprocessableEntity, gin.H{})
 	}
 	log.Println("rows", rows)
@@ -101,19 +100,7 @@ func (sh SigninHandler) SigninPostHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "email": signinPost.Email})
 }
 
-func (a SigninHandler) SigninOptionsHandler(c *gin.Context) {
+func (sh SigninHandler) signinOptionsHandler(c *gin.Context) {
 	log.Println("in OPTIONS /v1/signin")
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
-}
-
-// addCookie will apply a new cookie to the response of a http request
-// with the key/value specified.
-func addCookie(w http.ResponseWriter, name, value string, ttl time.Duration) {
-	expire := time.Now().Add(ttl)
-	cookie := http.Cookie{
-		Name:    name,
-		Value:   value,
-		Expires: expire,
-	}
-	http.SetCookie(w, &cookie)
 }
