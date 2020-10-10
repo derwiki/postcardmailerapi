@@ -22,21 +22,17 @@ func (a AddressesHandler) AddRoutes(router gin.IRouter) {
 }
 
 type AddressesListGetSchema struct {
-	UserId int `form:"user_id"`
+	UserID int `form:"user_id"`
 }
 
 func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
 	log.Println("in GET /v1/addresses")
 
-	// BEGIN checking authentication cookie
 	UserID := helpers.GetLoggedInUserID(c, a.DB)
 	if UserID == 0 {
-		log.Println("not logged in")
+		c.JSON(http.StatusForbidden, gin.H{})
 		return
 	}
-	log.Println("already logged in")
-	// TODO(derwiki) make sure issued_at is recent 2 hours (or whatever)
-	// END checking authentication cookie
 
 	var addressesListGetSchema AddressesListGetSchema
 
@@ -48,22 +44,19 @@ func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	sql, args, err := psql.Select("id", "name", "address1", "address2", "city", "state", "postal_code").From("addresses").Where(sq.Eq{"user_id": UserID}).ToSql()
 	if err != nil {
-		log.Println("AddressesListGetHandler constructing query")
-		// You should return error here
-		log.Fatal(err)
+		log.Fatal("AddressesListGetHandler constructing query", err)
+		return
 	}
-	log.Println("sql", sql)
-	log.Println("args", args)
+	log.Println("sql", sql, "args", args)
 
 	rows, err := a.DB.Query(sql, args...)
 	if err != nil {
-		log.Println("AddressesListGetHandler executing query")
-		// You should return error here
-		log.Fatal(err)
+		log.Fatal("AddressesListGetHandler executing query", err)
+		return
 	}
 
 	defer rows.Close()
-	respJson := gin.H{}
+	RespJSON := gin.H{}
 	for rows.Next() {
 		var id int
 		var name string
@@ -79,7 +72,7 @@ func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
 		}
 
 		idString := strconv.Itoa(id)
-		respJson[idString] = name
+		RespJSON[idString] = name
 		log.Println(idString, name, address1, address2, city, state, postalCode)
 	}
 
@@ -88,12 +81,7 @@ func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
 		log.Fatal(err)
 	}
 
-	c.JSON(http.StatusOK, respJson)
+	c.JSON(http.StatusOK, RespJSON)
 }
 
-func (a AddressesHandler) AddressesListOptionsHandler(c *gin.Context) {
-	// Done in middleware
-	//	fmt.Println("in OPTIONS /v1/addresses")
-	//	helpers.SetCorsHeaders(c)
-	//c.JSON(http.StatusOK, gin.H{})
-}
+func (a AddressesHandler) AddressesListOptionsHandler(c *gin.Context) {}
