@@ -18,17 +18,17 @@ import (
 
 type PostcardHandler struct {
 	DB               *sql.DB
-	DirectmailApiKey string
+	DirectMailAPIKey string
 }
 
 func (hnd PostcardHandler) AddRoutes(router gin.IRouter) {
-	router.POST("/v1/postcard/preview", hnd.PostcardPreviewPostHandler)
-	router.OPTIONS("/v1/postcard/preview", hnd.PostcardPreviewOptionsHandler)
-	router.POST("/v1/postcard/send", hnd.PostcardSendPostHandler)
-	router.OPTIONS("/v1/postcard/send", hnd.PostcardPreviewOptionsHandler)
+	router.POST("/v1/postcard/preview", hnd.postcardPreviewPostHandler)
+	router.OPTIONS("/v1/postcard/preview", hnd.postcardOptionsHandler)
+	router.POST("/v1/postcard/send", hnd.postcardSendPostHandler)
+	router.OPTIONS("/v1/postcard/send", hnd.postcardOptionsHandler)
 }
 
-type PostcardPreviewRequestSchema struct {
+type postcardPreviewRequestSchema struct {
 	Front  string
 	Back   string
 	To     []schemas.Address
@@ -36,7 +36,7 @@ type PostcardPreviewRequestSchema struct {
 	UserId int
 }
 
-type PreviewPostcardApiRequestSchema struct {
+type previewPostcardAPIRequestSchema struct {
 	Description string
 	Size        string
 	DryRun      bool
@@ -46,56 +46,53 @@ type PreviewPostcardApiRequestSchema struct {
 	From        schemas.Address
 }
 
-type UnprocessableEntityErrorResponseSchema struct {
+type unprocessableEntityErrorResponseSchema struct {
 	Message    string
 	StatusCode int
 }
 
-type UnprocessableEntityResponseSchema struct {
-	Error UnprocessableEntityErrorResponseSchema
+type unprocessableEntityResponseSchema struct {
+	Error unprocessableEntityErrorResponseSchema
 }
 
-type MyResponse struct {
+type directMailResponse struct {
 	StatusCode int
 	Body       []byte
 	Err        error
 }
 
-func (hnd PostcardHandler) PostcardPostHandler(c *gin.Context, dryrun bool) {
-	var responses []MyResponse
+func (hnd PostcardHandler) postcardPostHandler(c *gin.Context, dryrun bool) {
+	var responses []directMailResponse
 	UserID := helpers.GetLoggedInUserID(c, hnd.DB)
 	log.Println("PostcardPreviewPostHandler: UserID", UserID, "dryrun", dryrun)
 
-	var postcardPreviewRequest PostcardPreviewRequestSchema
+	var postcardPreviewRequest postcardPreviewRequestSchema
 	err := c.BindJSON(&postcardPreviewRequest)
 	if err != nil {
 		log.Fatal(err)
 	}
-	// fmt.Println(postcardPreviewRequest)
 
-	ch := make(chan MyResponse)
+	ch := make(chan directMailResponse)
 	concurrencyLevel := len(postcardPreviewRequest.To)
-	// 10 sec timeout.
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	timeOut := 10 * time.Second
+	ctx, cancel := context.WithTimeout(c.Request.Context(), timeOut)
 	defer cancel()
 
 	// This works, but if goroutine terminates before sending a message
 	// to the channel you'll never receive this many messages. Main
 	// goroutine will hang.
 	// for i := 0; i < concurrencyLevel; i++ {
-	//   go	 hnd.PreviewPostcardApiRequest(ch, postcardPreviewRequest, postcardPreviewRequest.To[i])
+	//   go	 hnd.previewPostcardAPIRequest(ch, postcardPreviewRequest, postcardPreviewRequest.To[i])
 	// }
 
 	var Response = gin.H{}
-	var Successes []DirectMailPostcardPostResponseSchema
-	var Failures []UnprocessableEntityResponseSchema
+	var Successes []directMailPostcardPostResponseSchema
+	var Failures []unprocessableEntityResponseSchema
 
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
 		for DirectMailAPIResponse := range ch {
-			// fmt.Println("received")
-			//respJson[strconv.Itoa(i)] = resp
 			responses = append(responses, DirectMailAPIResponse)
 
 			if DirectMailAPIResponse.Err != nil {
@@ -104,16 +101,15 @@ func (hnd PostcardHandler) PostcardPostHandler(c *gin.Context, dryrun bool) {
 
 				if DirectMailAPIResponse.StatusCode == 422 {
 					log.Println("status code 422")
-					var unprocessableEntity UnprocessableEntityResponseSchema
+					var unprocessableEntity unprocessableEntityResponseSchema
 					json.Unmarshal(DirectMailAPIResponse.Body, &unprocessableEntity)
 					log.Printf("%+v", unprocessableEntity)
 					Failures = append(Failures, unprocessableEntity)
 					// TODO(derwiki) make sure to handle this case with one user, it happens a lot
 				}
 				if DirectMailAPIResponse.StatusCode == 200 {
-					var directMailPostcardPost DirectMailPostcardPostResponseSchema
+					var directMailPostcardPost directMailPostcardPostResponseSchema
 					json.Unmarshal(DirectMailAPIResponse.Body, &directMailPostcardPost)
-					// fmt.Printf("%+v", directMailPostcardPost)
 					Successes = append(Successes, directMailPostcardPost)
 					// TODO(derwiki) save to DB
 				}
@@ -126,7 +122,7 @@ func (hnd PostcardHandler) PostcardPostHandler(c *gin.Context, dryrun bool) {
 		wg.Add(1)
 		go func(index int) {
 			defer wg.Done()
-			hnd.PreviewPostcardApiRequest(ctx, ch, postcardPreviewRequest, postcardPreviewRequest.To[index], dryrun, UserID)
+			hnd.previewPostcardAPIRequest(ctx, ch, postcardPreviewRequest, postcardPreviewRequest.To[index], dryrun, UserID)
 		}(i)
 	}
 
@@ -135,32 +131,34 @@ func (hnd PostcardHandler) PostcardPostHandler(c *gin.Context, dryrun bool) {
 	close(ch)
 	// Wait for it to end
 	<-done
-	// fmt.Println("len(responses)", len(responses))
 	Response[`Successes`] = Successes
 	Response[`Failures`] = Failures
 
 	c.JSON(200, Response)
 }
 
-func (hnd PostcardHandler) PreviewPostcardApiRequest(ctx context.Context, ch chan<- MyResponse, postcardPreviewRequest PostcardPreviewRequestSchema, to schemas.Address, dryrun bool, UserID int) {
-	log.Println("PreviewPostcardApiRequest enter")
-	BaseUrl := "https://print.directmailers.com/api/v1/postcard/"
+func (hnd PostcardHandler) previewPostcardAPIRequest(ctx context.Context, ch chan<- directMailResponse, postcardPreviewRequest postcardPreviewRequestSchema, to schemas.Address, dryrun bool, UserID int) {
+	log.Println("previewPostcardAPIRequest enter")
+	BaseURL := "https://print.directmailers.com/api/v1/postcard/"
 
-	var previewPostcardApiRequest = PreviewPostcardApiRequestSchema{
-		Description: "Testing from Golang",
-		Size:        "4.25x6",
-		DryRun:      dryrun,
-		Front:       postcardPreviewRequest.Front,
-		Back:        postcardPreviewRequest.Back,
-		To:          to,
-		From:        postcardPreviewRequest.From,
+	jsonValue, err := json.Marshal(
+		previewPostcardAPIRequestSchema{
+			Description: "Testing from Golang",
+			Size:        "4.25x6",
+			DryRun:      dryrun,
+			Front:       postcardPreviewRequest.Front,
+			Back:        postcardPreviewRequest.Back,
+			To:          to,
+			From:        postcardPreviewRequest.From,
+		})
+
+	if err != nil {
+		log.Fatal(err)
+		return
 	}
-	// fmt.Printf("%+v", previewPostcardApiRequest)
-	jsonValue, _ := json.Marshal(previewPostcardApiRequest)
-	// fmt.Printf("%+v", jsonValue)
 
 	client := &http.Client{}
-	req, err := http.NewRequest("POST", BaseUrl, bytes.NewReader(jsonValue))
+	req, err := http.NewRequest("POST", BaseURL, bytes.NewReader(jsonValue))
 	if err != nil {
 		log.Printf("err: NewRequest: %s", err)
 	}
@@ -168,13 +166,12 @@ func (hnd PostcardHandler) PreviewPostcardApiRequest(ctx context.Context, ch cha
 
 	req.Header.Set("Content-Type", `application/json`)
 	req.Header.Set("Accept", `application/json`)
-	req.Header.Set("Authorization", "Basic "+hnd.DirectmailApiKey)
-	// fmt.Printf("%+v", req)
+	req.Header.Set("Authorization", "Basic "+hnd.DirectMailAPIKey)
 
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Printf("err: client.Do: %s", err)
-		ch <- MyResponse{Err: err}
+		ch <- directMailResponse{Err: err}
 		return
 	}
 
@@ -183,32 +180,32 @@ func (hnd PostcardHandler) PreviewPostcardApiRequest(ctx context.Context, ch cha
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("err: ReadAll: %s", err)
-		ch <- MyResponse{Err: err}
+		ch <- directMailResponse{Err: err}
 		return
 	}
 
 	log.Println("About to save, UserID", UserID)
 	// TODO(derwiki) Save to database here
 
-	ch <- MyResponse{resp.StatusCode, body, nil}
+	ch <- directMailResponse{resp.StatusCode, body, nil}
 }
 
-func (hnd PostcardHandler) PostcardPreviewPostHandler(c *gin.Context) {
-	PostcardHandler.PostcardPostHandler(hnd, c, true)
+func (hnd PostcardHandler) postcardPreviewPostHandler(c *gin.Context) {
+	PostcardHandler.postcardPostHandler(hnd, c, true)
 }
-func (hnd PostcardHandler) PostcardSendPostHandler(c *gin.Context) {
-	PostcardHandler.PostcardPostHandler(hnd, c, false)
+func (hnd PostcardHandler) postcardSendPostHandler(c *gin.Context) {
+	PostcardHandler.postcardPostHandler(hnd, c, false)
 }
 
-// middleware takes care of this
-func (hnd PostcardHandler) PostcardPreviewOptionsHandler(c *gin.Context) {}
+func (hnd PostcardHandler) postcardOptionsHandler(c *gin.Context) {}
 
-type ThumbnailsResponseSchema struct {
+type thumbnailsResponseSchema struct {
 	Large  string
 	Medium string
 	Small  string
 }
-type AddressResponseSchema struct {
+
+type addressResponseSchema struct {
 	AddressLine1 string
 	AddressLine2 string
 	City         string
@@ -216,16 +213,16 @@ type AddressResponseSchema struct {
 	State        string
 	Zip          string
 }
-type DirectMailPostcardPostResponseSchema struct {
+type directMailPostcardPostResponseSchema struct {
 	EstimatedDeliveryDate string
 	ActualDeliveryDate    string
 	MailingDate           string
 	Front                 string
 	Back                  string
-	BackThumbnails        ThumbnailsResponseSchema
-	FrontThumbnails       ThumbnailsResponseSchema
-	From                  AddressResponseSchema
-	To                    AddressResponseSchema
+	BackThumbnails        thumbnailsResponseSchema
+	FrontThumbnails       thumbnailsResponseSchema
+	From                  addressResponseSchema
+	To                    addressResponseSchema
 	Canceled              bool
 	Cost                  int
 	Created               string

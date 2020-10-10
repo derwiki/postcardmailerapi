@@ -42,7 +42,7 @@ func main() {
 	addressHandler.AddRoutes(router)
 	dbTestHandler := routes.DBTestHandler{DB: db}
 	dbTestHandler.AddRoutes(router)
-	postcardHandler := routes.PostcardHandler{DB: db, DirectmailApiKey: os.Getenv("DIRECT_MAIL_KEY")}
+	postcardHandler := routes.PostcardHandler{DB: db, DirectMailAPIKey: os.Getenv("DIRECT_MAIL_KEY")}
 	postcardHandler.AddRoutes(router)
 	signinHandler := routes.SigninHandler{DB: db}
 	signinHandler.AddRoutes(router)
