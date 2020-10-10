@@ -2,7 +2,6 @@ package helpers
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -14,7 +13,7 @@ import (
 
 func SetCorsHeaders(c *gin.Context) {
 	var origin = c.GetHeader("Origin")
-	fmt.Println("SetCorsHeaders: Origin", origin)
+	log.Println("SetCorsHeaders: Origin", origin)
 	c.Header("Access-Control-Allow-Origin", origin)
 	c.Header("Access-Control-Allow-Headers", "access-control-allow-origin, access-control-allow-headers")
 	c.Header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
@@ -45,7 +44,7 @@ func GetLoggedInUserID(c *gin.Context, DB *sql.DB) int {
 	rows, err := DB.Query(sql, args...)
 
 	if err != nil {
-		fmt.Println("GetLoggedInUserID: performed query: err", err)
+		log.Println("GetLoggedInUserID: performed query: err", err)
 		return 0
 	}
 
@@ -53,16 +52,16 @@ func GetLoggedInUserID(c *gin.Context, DB *sql.DB) int {
 	rows.Next()
 	err = rows.Scan(&UserID, &IssuedAt)
 	if err != nil {
-		fmt.Println("GetLoggedInUserID: no user found for SessionID", SessionID)
+		log.Println("GetLoggedInUserID: no user found for SessionID", SessionID)
 		c.JSON(http.StatusForbidden, gin.H{})
 		return 0
 	}
 	err = rows.Err()
 	if err != nil {
-		fmt.Println("GetLoggedInUserID: row.Err", err)
+		log.Println("GetLoggedInUserID: row.Err", err)
 		return 0
 	}
-	fmt.Println("UserID", UserID, "IssuedAt", IssuedAt)
+	log.Println("UserID", UserID, "IssuedAt", IssuedAt)
 
 	return UserID
 }

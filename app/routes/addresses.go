@@ -2,7 +2,6 @@ package routes
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -27,15 +26,15 @@ type AddressesListGetSchema struct {
 }
 
 func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
-	fmt.Println("in GET /v1/addresses")
+	log.Println("in GET /v1/addresses")
 
 	// BEGIN checking authentication cookie
 	UserID := helpers.GetLoggedInUserID(c, a.DB)
 	if UserID == 0 {
-		fmt.Println("not logged in")
+		log.Println("not logged in")
 		return
 	}
-	fmt.Println("already logged in")
+	log.Println("already logged in")
 	// TODO(derwiki) make sure issued_at is recent 2 hours (or whatever)
 	// END checking authentication cookie
 
@@ -81,7 +80,7 @@ func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
 
 		idString := strconv.Itoa(id)
 		respJson[idString] = name
-		fmt.Println(idString, name, address1, address2, city, state, postalCode)
+		log.Println(idString, name, address1, address2, city, state, postalCode)
 	}
 
 	err = rows.Err()

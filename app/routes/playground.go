@@ -2,7 +2,6 @@ package routes
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -37,7 +36,7 @@ func (hnd DBTestHandler) DbTestPostHandler(c *gin.Context) {
 
 		err = rows.Scan(&id, &email)
 
-		fmt.Println(id, email)
+		log.Println(id, email)
 	}
 	// err was not used
 	if err != nil {
@@ -57,34 +56,34 @@ func (hnd DBTestHandler) DevisePostHandler(c *gin.Context) {
 	var encrypted_password string
 	var id int
 	email := "pc@derwiki.net"
-	fmt.Println("in DevisePostHandler")
+	log.Println("in DevisePostHandler")
 	rows, err := hnd.DB.Query("SELECT id, encrypted_password FROM users WHERE email = $1", email)
-	fmt.Println("in DevisePostHandler: performed query")
+	log.Println("in DevisePostHandler: performed query")
 	if err != nil {
-		fmt.Println("in DevisePostHandler: performed query: err", err)
+		log.Println("in DevisePostHandler: performed query: err", err)
 	}
 
 	defer rows.Close()
-	fmt.Println("in DevisePostHandler: performed Close", rows)
+	log.Println("in DevisePostHandler: performed Close", rows)
 	if rows == nil {
-		fmt.Println("in DevisePostHandler: performed Close, rows is nil")
+		log.Println("in DevisePostHandler: performed Close, rows is nil")
 		c.JSON(http.StatusOK, gin.H{})
 	} else {
 		rows.Next()
-		fmt.Println("in DevisePostHandler: in first Next()")
+		log.Println("in DevisePostHandler: in first Next()")
 
 		err = rows.Scan(&id, &encrypted_password)
 
-		fmt.Println("id", id, "password", encrypted_password)
+		log.Println("id", id, "password", encrypted_password)
 	}
 
 	pepper := ""
 
 	newPassword := "password1"
 	val := devisecrypto.Compare(newPassword, pepper, encrypted_password)
-	fmt.Println(`Passwords are the same?`, val)
+	log.Println(`Passwords are the same?`, val)
 
 	newPassword = "password"
 	val = devisecrypto.Compare(newPassword, pepper, encrypted_password)
-	fmt.Println(`Passwords are the same?`, val)
+	log.Println(`Passwords are the same?`, val)
 }

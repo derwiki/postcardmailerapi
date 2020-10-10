@@ -5,7 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -65,7 +64,7 @@ type MyResponse struct {
 func (hnd PostcardHandler) PostcardPostHandler(c *gin.Context, dryrun bool) {
 	var responses []MyResponse
 	UserID := helpers.GetLoggedInUserID(c, hnd.DB)
-	fmt.Println("PostcardPreviewPostHandler: UserID", UserID, "dryrun", dryrun)
+	log.Println("PostcardPreviewPostHandler: UserID", UserID, "dryrun", dryrun)
 
 	var postcardPreviewRequest PostcardPreviewRequestSchema
 	err := c.BindJSON(&postcardPreviewRequest)
@@ -100,14 +99,14 @@ func (hnd PostcardHandler) PostcardPostHandler(c *gin.Context, dryrun bool) {
 			responses = append(responses, DirectMailAPIResponse)
 
 			if DirectMailAPIResponse.Err != nil {
-				fmt.Printf("err: ReadAll: %s", DirectMailAPIResponse.Err)
+				log.Printf("err: ReadAll: %s", DirectMailAPIResponse.Err)
 			} else {
 
 				if DirectMailAPIResponse.StatusCode == 422 {
-					fmt.Println("status code 422")
+					log.Println("status code 422")
 					var unprocessableEntity UnprocessableEntityResponseSchema
 					json.Unmarshal(DirectMailAPIResponse.Body, &unprocessableEntity)
-					fmt.Printf("%+v", unprocessableEntity)
+					log.Printf("%+v", unprocessableEntity)
 					Failures = append(Failures, unprocessableEntity)
 					// TODO(derwiki) make sure to handle this case with one user, it happens a lot
 				}
@@ -127,7 +126,7 @@ func (hnd PostcardHandler) PostcardPostHandler(c *gin.Context, dryrun bool) {
 		wg.Add(1)
 		go func(index int) {
 			defer wg.Done()
-			hnd.PreviewPostcardApiRequest(ctx, ch, postcardPreviewRequest, postcardPreviewRequest.To[index], dryrun)
+			hnd.PreviewPostcardApiRequest(ctx, ch, postcardPreviewRequest, postcardPreviewRequest.To[index], dryrun, UserID)
 		}(i)
 	}
 
@@ -143,8 +142,8 @@ func (hnd PostcardHandler) PostcardPostHandler(c *gin.Context, dryrun bool) {
 	c.JSON(200, Response)
 }
 
-func (hnd PostcardHandler) PreviewPostcardApiRequest(ctx context.Context, ch chan<- MyResponse, postcardPreviewRequest PostcardPreviewRequestSchema, to schemas.Address, dryrun bool) {
-	fmt.Println("PreviewPostcardApiRequest enter")
+func (hnd PostcardHandler) PreviewPostcardApiRequest(ctx context.Context, ch chan<- MyResponse, postcardPreviewRequest PostcardPreviewRequestSchema, to schemas.Address, dryrun bool, UserID int) {
+	log.Println("PreviewPostcardApiRequest enter")
 	BaseUrl := "https://print.directmailers.com/api/v1/postcard/"
 
 	var previewPostcardApiRequest = PreviewPostcardApiRequestSchema{
@@ -163,7 +162,7 @@ func (hnd PostcardHandler) PreviewPostcardApiRequest(ctx context.Context, ch cha
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", BaseUrl, bytes.NewReader(jsonValue))
 	if err != nil {
-		fmt.Printf("err: NewRequest: %s", err)
+		log.Printf("err: NewRequest: %s", err)
 	}
 	req = req.WithContext(ctx)
 
@@ -174,8 +173,7 @@ func (hnd PostcardHandler) PreviewPostcardApiRequest(ctx context.Context, ch cha
 
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Printf("err: client.Do: %s", err)
-		// You have to return here, there is no body
+		log.Printf("err: client.Do: %s", err)
 		ch <- MyResponse{Err: err}
 		return
 	}
@@ -184,10 +182,13 @@ func (hnd PostcardHandler) PreviewPostcardApiRequest(ctx context.Context, ch cha
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Printf("err: ReadAll: %s", err)
+		log.Printf("err: ReadAll: %s", err)
 		ch <- MyResponse{Err: err}
 		return
 	}
+
+	log.Println("About to save, UserID", UserID)
+	// TODO(derwiki) Save to database here
 
 	ch <- MyResponse{resp.StatusCode, body, nil}
 }

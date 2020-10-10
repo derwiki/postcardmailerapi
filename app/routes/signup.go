@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"fmt"
 	helpers "github.com/derwiki/postcardmailerapi/app"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -19,13 +18,13 @@ func SignupPostHandler(c *gin.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(signupPost.Email, signupPost.Password)
+	log.Println(signupPost.Email, signupPost.Password)
 	helpers.SetCorsHeaders(c)
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "email": signupPost.Email})
 }
 
 func SignupOptionsHandler(c *gin.Context) {
-	fmt.Println("in OPTIONS /v1/signup")
+	log.Println("in OPTIONS /v1/signup")
 	helpers.SetCorsHeaders(c)
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
