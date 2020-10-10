@@ -84,13 +84,12 @@ func (sh SigninHandler) signinPostHandler(c *gin.Context) {
 	// Create a new random session token
 	sessionToken := uuid.New().String()
 	now := time.Now()
-	rows, err = sh.DB.Query(`
-		INSERT INTO sessions (user_id, session_id, issued_at, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5)
-		ON CONFLICT (user_id)
-		DO UPDATE SET session_id = $2, issued_at = $3, updated_at = $5
-		WHERE sessions.user_id = $1
-		`, id, sessionToken, now, now, now)
+	log.Println("signinPostHandler: sessionToken", sessionToken, "now", now)
+	upsertSessionQuery := psql.Insert("sessions").Columns("user_id", "session_id", "issued_at", "created_at", "updated_at").
+		Values(id, sessionToken, now, now, now).
+		Suffix("ON CONFLICT (user_id) DO UPDATE SET session_id = $1, issued_at = NOW(), created_at = NOW(), updated_at = NOW() WHERE sessions.user_id = $2", sessionToken, id)
+	rows, err = upsertSessionQuery.RunWith(sh.DB).Query()
+
 	if err != nil {
 		log.Println("signinPostHandler: performed query: err", err)
 		c.JSON(http.StatusUnprocessableEntity, gin.H{})
