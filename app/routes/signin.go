@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
@@ -83,7 +82,7 @@ func (sh SigninHandler) signinPostHandler(c *gin.Context) {
 
 	// Create a new random session token
 	sessionToken := uuid.New().String()
-	now := time.Now()
+	now := sq.Expr("NOW()")
 	log.Println("signinPostHandler: sessionToken", sessionToken, "now", now)
 	upsertSessionQuery := psql.Insert("sessions").Columns("user_id", "session_id", "issued_at", "created_at", "updated_at").
 		Values(id, sessionToken, now, now, now).
