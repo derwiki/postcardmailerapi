@@ -46,6 +46,8 @@ func main() {
 	postcardHandler.AddRoutes(router)
 	signinHandler := routes.SigninHandler{DB: db}
 	signinHandler.AddRoutes(router)
+	signedinHandler := routes.SignedinHandler{DB: db}
+	signedinHandler.AddRoutes(router)
 
 	// Similar handler for SignupPost
 	router.POST("/v1/signup", routes.SignupPostHandler)
