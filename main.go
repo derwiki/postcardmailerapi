@@ -46,6 +46,8 @@ func main() {
 	postcardHandler.AddRoutes(router)
 	signinHandler := routes.SigninHandler{DB: db}
 	signinHandler.AddRoutes(router)
+	signoutHandler := routes.SignoutHandler{DB: db}
+	signoutHandler.AddRoutes(router)
 	signedinHandler := routes.SignedinHandler{DB: db}
 	signedinHandler.AddRoutes(router)
 
