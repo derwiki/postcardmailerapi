@@ -22,6 +22,9 @@ func main() {
 		log.Fatal("$PORT must be set")
 	}
 
+	if os.Getenv("GIN_MODE") == "release" {
+		gin.SetMode(gin.ReleaseMode)
+	}
 	router := gin.New()
 	router.Use(gin.Logger())
 
