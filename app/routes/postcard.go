@@ -12,7 +12,7 @@ import (
 	"time"
 
 	helpers "github.com/derwiki/postcardmailerapi/app"
-	"github.com/derwiki/postcardmailerapi/app/schemas"
+	sharedschemas "github.com/derwiki/postcardmailerapi/app/schemas"
 	"github.com/gin-gonic/gin"
 )
 
@@ -31,8 +31,8 @@ func (hnd PostcardHandler) AddRoutes(router gin.IRouter) {
 type postcardPreviewRequestSchema struct {
 	Front  string
 	Back   string
-	To     []schemas.Address
-	From   schemas.Address
+	To     []sharedschemas.Address
+	From   sharedschemas.Address
 	UserId int
 }
 
@@ -42,8 +42,8 @@ type previewPostcardAPIRequestSchema struct {
 	DryRun      bool
 	Front       string
 	Back        string
-	To          schemas.Address
-	From        schemas.Address
+	To          sharedschemas.Address
+	From        sharedschemas.Address
 }
 
 type unprocessableEntityErrorResponseSchema struct {
@@ -137,7 +137,7 @@ func (hnd PostcardHandler) postcardPostHandler(c *gin.Context, dryrun bool) {
 	c.JSON(200, Response)
 }
 
-func (hnd PostcardHandler) previewPostcardAPIRequest(ctx context.Context, ch chan<- directMailResponse, postcardPreviewRequest postcardPreviewRequestSchema, to schemas.Address, dryrun bool, UserID int) {
+func (hnd PostcardHandler) previewPostcardAPIRequest(ctx context.Context, ch chan<- directMailResponse, postcardPreviewRequest postcardPreviewRequestSchema, to sharedschemas.Address, dryrun bool, UserID int) {
 	log.Println("previewPostcardAPIRequest enter")
 	BaseURL := "https://print.directmailers.com/api/v1/postcard/"
 

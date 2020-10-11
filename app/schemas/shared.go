@@ -1,4 +1,4 @@
-package schemas
+package sharedschemas
 
 type Address struct {
 	Name         string

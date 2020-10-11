@@ -8,6 +8,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	helpers "github.com/derwiki/postcardmailerapi/app"
+	sharedschemas "github.com/derwiki/postcardmailerapi/app/schemas"
 	"github.com/gin-gonic/gin"
 )
 
@@ -72,7 +73,7 @@ func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
 		}
 
 		idString := strconv.Itoa(id)
-		RespJSON[idString] = name
+		RespJSON[idString] = sharedschemas.Address{Name: name, AddressLine1: address1, AddressLine2: address2, City: city, State: state, Zip: postalCode}
 		log.Println(idString, name, address1, address2, city, state, postalCode)
 	}
 
