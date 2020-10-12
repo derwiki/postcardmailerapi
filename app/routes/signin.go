@@ -86,7 +86,7 @@ func (sh SigninHandler) signinPostHandler(c *gin.Context) {
 	log.Println("signinPostHandler: sessionToken", sessionToken, "now", now)
 	upsertSessionQuery := psql.Insert("sessions").Columns("user_id", "session_id", "issued_at", "created_at", "updated_at").
 		Values(id, sessionToken, now, now, now).
-		Suffix("ON CONFLICT (user_id) DO UPDATE SET session_id = $1, issued_at = NOW(), created_at = NOW(), updated_at = NOW() WHERE sessions.user_id = $2", sessionToken, id)
+		Suffix("ON CONFLICT (user_id) DO UPDATE SET session_id = $2, issued_at = NOW(), created_at = NOW(), updated_at = NOW() WHERE sessions.user_id = $1")
 	rows, err = upsertSessionQuery.RunWith(sh.DB).Query()
 
 	if err != nil {
