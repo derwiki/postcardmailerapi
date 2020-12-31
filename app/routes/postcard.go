@@ -65,6 +65,9 @@ func (hnd PostcardHandler) postcardPostHandler(c *gin.Context, dryrun bool) {
 	var responses []directMailResponse
 	UserID := helpers.GetLoggedInUserID(c, hnd.DB)
 	log.Println("PostcardPreviewPostHandler: UserID", UserID, "dryrun", dryrun)
+	if UserID == 0 {
+		return
+	}
 
 	var postcardPreviewRequest postcardPreviewRequestSchema
 	err := c.BindJSON(&postcardPreviewRequest)
