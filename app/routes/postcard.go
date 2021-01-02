@@ -62,6 +62,7 @@ type directMailResponse struct {
 }
 
 func (hnd PostcardHandler) postcardPostHandler(c *gin.Context, dryrun bool) {
+	log.Println("PostcardPreviewPostHandler: entry")
 	var responses []directMailResponse
 	UserID := helpers.GetLoggedInUserID(c, hnd.DB)
 	log.Println("PostcardPreviewPostHandler: UserID", UserID, "dryrun", dryrun)
