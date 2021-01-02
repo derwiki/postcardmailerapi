@@ -25,12 +25,13 @@ func SetCorsHeaders(c *gin.Context) {
 func GetLoggedInUserID(c *gin.Context, DB *sql.DB) int {
 	SessionID, err := c.Cookie("SessionId")
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		if err == http.ErrNoCookie {
 			// c.JSON(http.StatusUnauthorized, gin.H{"status": "unauthorized"})
 			return 0
 		}
 	}
+	log.Println("SessionID", SessionID)
 
 	var UserID int
 	var IssuedAt time.Time
