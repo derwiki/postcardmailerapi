@@ -66,7 +66,10 @@ func (hnd PostcardHandler) postcardPostHandler(c *gin.Context, dryrun bool) {
 	var responses []directMailResponse
 	UserID := helpers.GetLoggedInUserID(c, hnd.DB)
 	log.Println("PostcardPreviewPostHandler: UserID", UserID, "dryrun", dryrun)
-	if UserID == 0 {
+
+	// TODO(derwiki) if this is a preview then userID can be 0
+	if UserID == 0 && !dryrun {
+		c.JSON(http.StatusUnauthorized, gin.H{"status": "unauthorized"})
 		return
 	}
 
