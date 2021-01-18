@@ -43,7 +43,7 @@ func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
 	}
 
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	sql, args, err := psql.Select("id", "name", "address1", "address2", "city", "state", "postal_code").From("addresses").Where(sq.Eq{"user_id": UserID}).ToSql()
+	sql, args, err := psql.Select("id", "name", "address1", "address2", "city", "state", "postal_code").From("addresses").Where(sq.Eq{"user_id": UserID}).Where(sq.Eq{"deactivated_at": nil}).ToSql()
 	if err != nil {
 		log.Fatal("AddressesListGetHandler constructing query", err)
 		return
