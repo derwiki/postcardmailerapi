@@ -53,6 +53,8 @@ func main() {
 	signoutHandler.AddRoutes(router)
 	signedinHandler := routes.SignedinHandler{DB: db}
 	signedinHandler.AddRoutes(router)
+	profileHandler := routes.ProfileHandler{DB: db}
+	profileHandler.AddRoutes(router)
 
 	// Similar handler for SignupPost
 	router.POST("/v1/signup", routes.SignupPostHandler)

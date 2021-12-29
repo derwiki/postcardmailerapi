@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
-	"strconv"
 
 	sq "github.com/Masterminds/squirrel"
 	helpers "github.com/derwiki/postcardmailerapi/app"
@@ -32,7 +31,7 @@ func (a ProfileHandler) ProfileGetHandler(c *gin.Context) {
 	}
 
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	sql, args, err := psql.Select("address_id").From("users").Where(sq.Eq{"id": UserID}).Where(sq.Eq{"deactivated_at": nil}).ToSql()
+	sql, args, err := psql.Select("address_id").From("users").Where(sq.Eq{"id": UserID}).ToSql()
 	if err != nil {
 		log.Fatal("ProfileGetHandler:users constructing query", err)
 		return
@@ -44,9 +43,20 @@ func (a ProfileHandler) ProfileGetHandler(c *gin.Context) {
 		return
 	}
 	defer rows.Close()
-	AddressID := rows.Next()
+	rows.Next()
+	err = rows.Err()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("ProfileGetHandler:users sql", sql, "args", args)
+	var address_id int
+	err = rows.Scan(&address_id)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("ProfileGetHandler:users address_id", address_id)
 
-	sql, args, err = psql.Select("id", "name", "address1", "address2", "city", "state", "postal_code").From("addresses").Where(sq.Eq{"id": AddressID}).Where(sq.Eq{"deactivated_at": nil}).ToSql()
+	sql, args, err = psql.Select("id", "name", "address1", "address2", "city", "state", "postal_code").From("addresses").Where(sq.Eq{"id": address_id}).Where(sq.Eq{"deactivated_at": nil}).ToSql()
 	if err != nil {
 		log.Fatal("ProfileGetHandler.addresses constructing query", err)
 		return
@@ -75,9 +85,8 @@ func (a ProfileHandler) ProfileGetHandler(c *gin.Context) {
 			log.Fatal(err)
 		}
 
-		idString := strconv.Itoa(id)
-		RespJSON[idString] = sharedschemas.Address{Name: name, AddressLine1: address1, AddressLine2: address2, City: city, State: state, Zip: postalCode}
-		log.Println(idString, name, address1, address2, city, state, postalCode)
+		RespJSON["address"] = sharedschemas.Address{Name: name, AddressLine1: address1, AddressLine2: address2, City: city, State: state, Zip: postalCode}
+		log.Println("address", name, address1, address2, city, state, postalCode)
 	}
 
 	err = rows.Err()
