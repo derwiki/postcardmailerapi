@@ -17,6 +17,7 @@ require (
 	github.com/mattn/go-colorable v0.0.0-20150625154642-40e4aedc8fab // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
+	github.com/stretchr/testify v1.4.0
 	github.com/ugorji/go v1.1.10 // indirect
 	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0 // indirect
 	golang.org/x/sys v0.0.0-20201007165808-a893ed343c85 // indirect

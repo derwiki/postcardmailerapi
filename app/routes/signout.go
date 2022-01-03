@@ -34,7 +34,12 @@ func (sh SignoutHandler) signoutPostHandler(c *gin.Context) {
 		secure = false
 	}
 
-	UserID := helpers.GetLoggedInUserID(c, sh.DB)
+	UserID, ok := helpers.GetLoggedInUserID(c, sh.DB)
+	if !ok {
+		// TODO better return code
+		c.JSON(http.StatusForbidden, gin.H{})
+		return
+	}
 
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	sql, args, err := psql.Delete("").From("sessions").Where(sq.Eq{"user_id": UserID}).ToSql()

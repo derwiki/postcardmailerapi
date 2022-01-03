@@ -64,7 +64,12 @@ type directMailResponse struct {
 func (hnd PostcardHandler) postcardPostHandler(c *gin.Context, dryrun bool) {
 	log.Println("PostcardPreviewPostHandler: entry")
 	var responses []directMailResponse
-	UserID := helpers.GetLoggedInUserID(c, hnd.DB)
+	UserID, ok := helpers.GetLoggedInUserID(c, hnd.DB)
+	if !ok {
+		// TODO better return code
+		c.JSON(http.StatusForbidden, gin.H{})
+		return
+	}
 	log.Println("PostcardPreviewPostHandler: UserID", UserID, "dryrun", dryrun)
 
 	// TODO(derwiki) if this is a preview then userID can be 0

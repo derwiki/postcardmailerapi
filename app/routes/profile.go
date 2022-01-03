@@ -24,8 +24,8 @@ func (a ProfileHandler) AddRoutes(router gin.IRouter) {
 func (a ProfileHandler) ProfileGetHandler(c *gin.Context) {
 	log.Println("in GET /v1/profile")
 
-	UserID := helpers.GetLoggedInUserID(c, a.DB)
-	if UserID == 0 {
+	UserID, ok := helpers.GetLoggedInUserID(c, a.DB)
+	if !ok {
 		c.JSON(http.StatusForbidden, gin.H{})
 		return
 	}

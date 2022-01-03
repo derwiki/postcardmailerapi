@@ -2,10 +2,11 @@ package routes
 
 import (
 	"database/sql"
-	helpers "github.com/derwiki/postcardmailerapi/app"
-	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
+
+	helpers "github.com/derwiki/postcardmailerapi/app"
+	"github.com/gin-gonic/gin"
 )
 
 // SignedinHandler gives this route access to DB
@@ -20,8 +21,8 @@ func (sh SignedinHandler) AddRoutes(router gin.IRouter) {
 }
 
 func (sh SignedinHandler) signedinGetHandler(c *gin.Context) {
-	UserID := helpers.GetLoggedInUserID(c, sh.DB)
-	if UserID > 0 {
+	UserID, ok := helpers.GetLoggedInUserID(c, sh.DB)
+	if ok {
 		c.JSON(http.StatusOK, gin.H{"status": "ok", "user_id": UserID})
 	}
 }
