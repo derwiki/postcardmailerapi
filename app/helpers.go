@@ -13,8 +13,6 @@ import (
 
 func SetCorsHeaders(c *gin.Context) {
 	var origin = c.GetHeader("Origin")
-	// TODO(derwiki) actually allowlist for our domains
-	// TODO(derwiki) might be able to remove some
 	log.Println("SetCorsHeaders: Origin", origin)
 	c.Header("Access-Control-Allow-Origin", origin)
 	c.Header("Access-Control-Allow-Headers", "access-control-allow-origin, access-control-allow-headers")
@@ -24,13 +22,13 @@ func SetCorsHeaders(c *gin.Context) {
 	c.Header("Accept", `application/json`)
 }
 
-func GetLoggedInUserID(c *gin.Context, DB *sql.DB) (int, bool) {
+func GetLoggedInUserID(c *gin.Context, DB *sql.DB) int {
 	SessionID, err := c.Cookie("SessionId")
 	if err != nil {
 		log.Println(err)
 		if err == http.ErrNoCookie {
 			// c.JSON(http.StatusUnauthorized, gin.H{"status": "unauthorized"})
-			return 0, false
+			return 0
 		}
 	}
 	log.Println("SessionID", SessionID)
@@ -42,13 +40,13 @@ func GetLoggedInUserID(c *gin.Context, DB *sql.DB) (int, bool) {
 	if err != nil {
 		log.Println("GetLoggedInUserID constructing query")
 		log.Fatal(err)
-		return 0, false
+		return 0
 	}
 	rows, err := DB.Query(sql, args...)
 
 	if err != nil {
 		log.Println("GetLoggedInUserID: performed query: err", err)
-		return 0, false
+		return 0
 	}
 
 	defer rows.Close()
@@ -57,14 +55,14 @@ func GetLoggedInUserID(c *gin.Context, DB *sql.DB) (int, bool) {
 	if err != nil {
 		log.Println("GetLoggedInUserID: no user found for SessionID", SessionID)
 		c.JSON(http.StatusForbidden, gin.H{})
-		return 0, false
+		return 0
 	}
 	err = rows.Err()
 	if err != nil {
 		log.Println("GetLoggedInUserID: row.Err", err)
-		return 0, false
+		return 0
 	}
 	log.Println("UserID", UserID, "IssuedAt", IssuedAt)
 
-	return UserID, true
+	return UserID
 }

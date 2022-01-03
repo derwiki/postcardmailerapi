@@ -29,8 +29,8 @@ type AddressesListGetSchema struct {
 func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
 	log.Println("in GET /v1/addresses")
 
-	UserID, ok := helpers.GetLoggedInUserID(c, a.DB)
-	if !ok {
+	UserID := helpers.GetLoggedInUserID(c, a.DB)
+	if UserID == 0 {
 		c.JSON(http.StatusForbidden, gin.H{})
 		return
 	}
@@ -86,5 +86,3 @@ func (a AddressesHandler) AddressesListGetHandler(c *gin.Context) {
 }
 
 func (a AddressesHandler) AddressesListOptionsHandler(c *gin.Context) {}
-
-// add AddAddress route here
