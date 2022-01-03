@@ -46,3 +46,10 @@ or
 For more information about using Go on Heroku, see these Dev Center articles:
 
 - [Go on Heroku](https://devcenter.heroku.com/categories/go)
+
+# Launch Requirements
+
+
+## Non-requirements
+- Graceful transition of past accounts/members
+  - as-is, logins from the existing site work
