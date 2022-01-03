@@ -1,18 +1,28 @@
 package routes
 
-import "testing"
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
 
-func TestAddressesListHandler(t *testing.T) {
-	resp := OrdinaryResponse{}
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
+)
 
-	err := utils.TestHandlerUnMarshalResp("POST", "/login", "form", user, &resp)
-	if err != nil {
-		t.Errorf("TestLoginHandler: %v\n", err)
-		return
-	}
+func setupRouter() *gin.Engine {
+	r := gin.Default()
+	r.GET("/ping", func(c *gin.Context) {
+		c.String(200, "pong")
+	})
+	return r
+}
+func TestPingRoute(t *testing.T) {
+	router := setupRouter()
 
-	if resp.Errno != "0" {
-		t.Errorf("TestLoginHandler: response is not expected\n")
-		return
-	}
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/ping", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+	assert.Equal(t, "pong", w.Body.String())
 }
